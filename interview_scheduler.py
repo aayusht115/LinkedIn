@@ -1,6 +1,5 @@
 import uuid
-
-interviews = []
+from database import save_interview
 
 def schedule_interview(data):
     interview = {
@@ -10,7 +9,6 @@ def schedule_interview(data):
         "time": data["time"],
         "meeting_link": "https://meet.fake/" + str(uuid.uuid4())[:6]
     }
-
-    interviews.append(interview)
-
+    save_interview(interview)
     return interview
+
