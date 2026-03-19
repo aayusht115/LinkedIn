@@ -113,6 +113,25 @@
     .job-company{font-size:12px;color:var(--li-muted);}
     .job-meta{font-size:11px;color:var(--li-blue);margin-top:2px;}
     .recruiter-check-btn{display:flex;align-items:center;gap:4px;background:none;border:none;font-size:11px;color:var(--li-muted);cursor:pointer;padding:2px 0;font-family:inherit;}
+    .filter-bar{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;padding:12px 16px;margin-bottom:8px;}
+    .filter-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+    .filter-search{flex:1;display:flex;align-items:center;gap:8px;background:#F3F2EF;border:1px solid var(--li-border);border-radius:20px;padding:6px 14px;}
+    .filter-search input{background:transparent;border:none;outline:none;font-size:13px;width:100%;color:var(--li-text);}
+    .filter-search input::placeholder{color:var(--li-muted);}
+    .filter-clear{background:none;border:none;font-size:12px;color:var(--li-muted);cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;}
+    .filter-clear:hover{background:var(--li-hover);color:var(--li-text);}
+    .filter-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+    .filter-label{font-size:12px;font-weight:600;color:var(--li-muted);margin-right:2px;}
+    .chip{padding:4px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--li-border);background:var(--li-white);color:var(--li-muted);transition:all 0.1s;}
+    .chip:hover{border-color:#000000B3;color:var(--li-text);}
+    .chip.active{background:var(--li-blue);color:#fff;border-color:var(--li-blue);}
+    .filter-divider{width:1px;height:18px;background:var(--li-border);margin:0 4px;}
+    .filter-results{font-size:12px;color:var(--li-muted);padding:6px 0 0;display:none;}
+    .filter-results.show{display:block;}
+    .highlight{background:#FFF3CD;border-radius:2px;padding:0 1px;}
+    .post-card.hidden{display:none;}
+    .no-results{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;padding:32px 16px;text-align:center;color:var(--li-muted);font-size:14px;display:none;}
+    .no-results.show{display:block;}
     .recruiter-check-btn:hover{color:var(--li-blue);}
   </style>
 </head>
@@ -243,8 +262,33 @@
       </div>
     </div>
 
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-top">
+        <div class="filter-search">
+          <svg width="14" height="14" fill="none" stroke="#999" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="filter-keyword" placeholder="Filter by keyword, name, company..." oninput="applyFilters()" />
+        </div>
+        <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+      </div>
+      <div class="filter-chips">
+        <span class="filter-label">Topic:</span>
+        <span class="chip active" data-filter="topic" data-value="all" onclick="toggleChip(this,'topic')">All</span>
+        <span class="chip" data-filter="topic" data-value="hiring" onclick="toggleChip(this,'topic')">Hiring</span>
+        <span class="chip" data-filter="topic" data-value="engineering" onclick="toggleChip(this,'topic')">Engineering</span>
+        <span class="chip" data-filter="topic" data-value="ai" onclick="toggleChip(this,'topic')">AI / ML</span>
+        <span class="chip" data-filter="topic" data-value="career" onclick="toggleChip(this,'topic')">Career</span>
+        <div class="filter-divider"></div>
+        <span class="filter-label">Sort:</span>
+        <span class="chip active" data-filter="sort" data-value="recent" onclick="toggleChip(this,'sort')">Recent</span>
+        <span class="chip" data-filter="sort" data-value="top" onclick="toggleChip(this,'sort')">Top</span>
+      </div>
+      <div class="filter-results" id="filter-results"></div>
+    </div>
+    <div class="no-results" id="no-results">No posts match your filters. <span style="cursor:pointer;color:var(--li-blue);font-weight:600;" onclick="clearFilters()">Clear filters</span></div>
+
     <!-- POST 1 -->
-    <div class="post-card">
+    <div class="post-card" data-topics="career engineering" data-author="Priya Rajan" data-company="Stripe" data-reactions="847">
       <div class="post-header">
         <div class="post-avatar" style="background:#6B48FF;">PR</div>
         <div class="post-meta">
@@ -272,7 +316,7 @@
     </div>
 
     <!-- POST 2 -->
-    <div class="post-card">
+    <div class="post-card" data-topics="hiring engineering career" data-author="Marcus Kim" data-company="Shopify" data-reactions="2341">
       <div class="post-header">
         <div class="post-avatar" style="background:#057642;">MK</div>
         <div class="post-meta">
@@ -301,7 +345,7 @@
     </div>
 
     <!-- POST 3 -->
-    <div class="post-card">
+    <div class="post-card" data-topics="ai engineering" data-author="Sofia Liu" data-company="Google DeepMind" data-reactions="5902">
       <div class="post-header">
         <div class="post-avatar" style="background:#B24020;">SL</div>
         <div class="post-meta">
@@ -434,6 +478,69 @@
   }
   function closeSummary(num){ document.getElementById('sum-bar-'+num).classList.remove('show'); }
   document.querySelector('.modal-overlay').addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) closeModal(); });
+
+  // ── FEED FILTER ──
+  const filterState = { topic: 'all', sort: 'recent', keyword: '' };
+
+  function toggleChip(el, group) {
+    document.querySelectorAll(`.chip[data-filter="${group}"]`).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    filterState[group] = el.dataset.value;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    filterState.keyword = document.getElementById('filter-keyword').value.trim().toLowerCase();
+    const posts = document.querySelectorAll('.post-card');
+    let visible = 0;
+
+    // Sort
+    const feed = document.querySelector('.feed');
+    const postArr = Array.from(posts);
+    if (filterState.sort === 'top') {
+      postArr.sort((a, b) => parseInt(b.dataset.reactions||0) - parseInt(a.dataset.reactions||0));
+    } else {
+      postArr.sort((a, b) => postArr.indexOf(a) - postArr.indexOf(b));
+    }
+    postArr.forEach(p => feed.appendChild(p));
+
+    posts.forEach(post => {
+      const topics  = post.dataset.topics || '';
+      const text    = post.innerText.toLowerCase();
+      const topicOk = filterState.topic === 'all' || topics.includes(filterState.topic);
+      const keyOk   = !filterState.keyword || text.includes(filterState.keyword);
+      const show    = topicOk && keyOk;
+      post.classList.toggle('hidden', !show);
+      if (show) visible++;
+
+      // Highlight keyword in post body
+      const body = post.querySelector('.post-body');
+      if (body) {
+        body.innerHTML = body.innerHTML.replace(/<mark class="highlight">([^<]*)<\/mark>/g, '$1');
+        if (filterState.keyword && keyOk) {
+          const re = new RegExp(`(${filterState.keyword.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+          body.innerHTML = body.innerHTML.replace(re, '<mark class="highlight">$1</mark>');
+        }
+      }
+    });
+
+    const nr = document.getElementById('no-results');
+    nr.classList.toggle('show', visible === 0);
+
+    const fr = document.getElementById('filter-results');
+    const isFiltered = filterState.topic !== 'all' || filterState.keyword;
+    fr.classList.toggle('show', isFiltered);
+    if (isFiltered) fr.textContent = `Showing ${visible} of ${posts.length} posts`;
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-keyword').value = '';
+    filterState.keyword = ''; filterState.topic = 'all'; filterState.sort = 'recent';
+    document.querySelectorAll('.chip[data-value="all"]').forEach(c => c.classList.add('active'));
+    document.querySelectorAll('.chip:not([data-value="all"]):not([data-value="recent"])').forEach(c => c.classList.remove('active'));
+    document.querySelector('.chip[data-value="recent"]').classList.add('active');
+    applyFilters();
+  }
 </script>
 </body>
 </html>

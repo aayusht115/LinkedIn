@@ -103,6 +103,48 @@
     .settings-bar label{font-weight:600;white-space:nowrap;}
     .ai-panel{background:#E8F5EE;border:1px solid #B7DEC5;border-radius:8px;padding:12px;margin-bottom:8px;}
     .ai-panel-title{font-weight:700;font-size:14px;color:#057642;margin-bottom:4px;}
+    .filter-bar{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;padding:12px 16px;margin-bottom:8px;}
+    .filter-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+    .filter-search{flex:1;display:flex;align-items:center;gap:8px;background:#F3F2EF;border:1px solid var(--li-border);border-radius:20px;padding:6px 14px;}
+    .filter-search input{background:transparent;border:none;outline:none;font-size:13px;width:100%;color:var(--li-text);}
+    .filter-search input::placeholder{color:var(--li-muted);}
+    .filter-clear{background:none;border:none;font-size:12px;color:var(--li-muted);cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;}
+    .filter-clear:hover{background:var(--li-hover);color:var(--li-text);}
+    .filter-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+    .filter-label{font-size:12px;font-weight:600;color:var(--li-muted);margin-right:2px;}
+    .chip{padding:4px 12px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--li-border);background:var(--li-white);color:var(--li-muted);transition:all 0.1s;}
+    .chip:hover{border-color:#000000B3;color:var(--li-text);}
+    .chip.active{background:#057642;color:#fff;border-color:#057642;}
+    .filter-divider{width:1px;height:18px;background:var(--li-border);margin:0 4px;}
+    .filter-results{font-size:12px;color:var(--li-muted);padding:6px 0 0;display:none;}
+    .filter-results.show{display:block;}
+    .highlight{background:#FFF3CD;border-radius:2px;padding:0 1px;}
+    .post-card.hidden{display:none;}
+    .no-results{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;padding:32px 16px;text-align:center;color:var(--li-muted);font-size:14px;display:none;}
+    .no-results.show{display:block;}
+    .interviews-panel{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;margin-bottom:8px;overflow:hidden;}
+    .interviews-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--li-border);}
+    .interviews-title{font-weight:700;font-size:15px;}
+    .interviews-count{font-size:12px;color:var(--li-muted);}
+    .refresh-btn{background:none;border:1px solid var(--li-border);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--li-muted);cursor:pointer;font-family:inherit;}
+    .refresh-btn:hover{background:var(--li-hover);color:var(--li-text);}
+    .interviews-table{width:100%;border-collapse:collapse;}
+    .interviews-table th{text-align:left;padding:8px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--li-muted);background:#FAFAF8;border-bottom:1px solid var(--li-border);}
+    .interviews-table td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--li-border);vertical-align:middle;}
+    .interviews-table tr:last-child td{border-bottom:none;}
+    .interviews-table tr:hover td{background:#FAFAF8;}
+    .int-avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;margin-right:8px;vertical-align:middle;flex-shrink:0;}
+    .int-name{font-weight:600;}
+    .int-time-cell{color:var(--li-text);}
+    .int-time-date{font-weight:600;font-size:13px;}
+    .int-time-clock{font-size:11px;color:var(--li-muted);}
+    .meet-link{color:var(--li-blue);font-size:12px;font-weight:600;text-decoration:none;}
+    .meet-link:hover{text-decoration:underline;}
+    .empty-state{padding:32px 16px;text-align:center;color:var(--li-muted);font-size:14px;}
+    .loading-state{padding:20px 16px;text-align:center;color:var(--li-muted);font-size:13px;}
+    .status-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;}
+    .status-upcoming{background:#E8F5EE;color:#057642;}
+    .status-past{background:#F1EFE8;color:#5F5E5A;}
     .ai-panel-desc{font-size:12px;color:#046235;margin-bottom:10px;}
     .pipeline-item{background:#fff;border:1px solid #C3E0CC;border-radius:6px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;}
     .pipeline-name{font-weight:600;font-size:13px;}
@@ -218,7 +260,45 @@
       </div>
     </div>
 
-    <!-- Post composer -->
+    <!-- SCHEDULED INTERVIEWS PANEL -->
+    <div class="interviews-panel">
+      <div class="interviews-header">
+        <div>
+          <span class="interviews-title">Scheduled Interviews</span>
+          <span class="interviews-count" id="int-count"></span>
+        </div>
+        <button class="refresh-btn" onclick="loadInterviews()">↻ Refresh</button>
+      </div>
+      <div id="interviews-body">
+        <div class="loading-state"><span class="spin"></span> Loading...</div>
+      </div>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <div class="filter-top">
+        <div class="filter-search">
+          <svg width="14" height="14" fill="none" stroke="#999" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" id="filter-keyword" placeholder="Filter by keyword, name, company..." oninput="applyFilters()" />
+        </div>
+        <button class="filter-clear" onclick="clearFilters()">✕ Clear</button>
+      </div>
+      <div class="filter-chips">
+        <span class="filter-label">Topic:</span>
+        <span class="chip active" data-filter="topic" data-value="all" onclick="toggleChip(this,'topic')">All</span>
+        <span class="chip" data-filter="topic" data-value="hiring" onclick="toggleChip(this,'topic')">Hiring</span>
+        <span class="chip" data-filter="topic" data-value="engineering" onclick="toggleChip(this,'topic')">Engineering</span>
+        <span class="chip" data-filter="topic" data-value="ai" onclick="toggleChip(this,'topic')">AI / ML</span>
+        <span class="chip" data-filter="topic" data-value="career" onclick="toggleChip(this,'topic')">Career</span>
+        <div class="filter-divider"></div>
+        <span class="filter-label">Sort:</span>
+        <span class="chip active" data-filter="sort" data-value="recent" onclick="toggleChip(this,'sort')">Recent</span>
+        <span class="chip" data-filter="sort" data-value="top" onclick="toggleChip(this,'sort')">Top</span>
+      </div>
+      <div class="filter-results" id="filter-results"></div>
+    </div>
+    <div class="no-results" id="no-results">No posts match your filters. <span style="cursor:pointer;color:#057642;font-weight:600;" onclick="clearFilters()">Clear filters</span></div>
+
     <div class="post-composer">
       <div class="composer-row">
         <div class="composer-avatar">SR</div>
@@ -232,7 +312,7 @@
     </div>
 
     <!-- POST 1 -->
-    <div class="post-card">
+    <div class="post-card" data-topics="hiring engineering career" data-author="Marcus Kim" data-company="Shopify" data-reactions="2341">
       <div class="post-header">
         <div class="post-avatar" style="background:#6B48FF;">MK</div>
         <div class="post-meta">
@@ -260,7 +340,7 @@
     </div>
 
     <!-- POST 2 -->
-    <div class="post-card">
+    <div class="post-card" data-topics="ai engineering" data-author="Sofia Liu" data-company="Google DeepMind" data-reactions="5902">
       <div class="post-header">
         <div class="post-avatar" style="background:#B24020;">SL</div>
         <div class="post-meta">
@@ -353,6 +433,56 @@
   function prefillSchedule(name){ document.getElementById('s-candidate').value=name; openScheduleModal(); }
   function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
 
+  function avatarColor(name){
+    const colors=['#0A66C2','#057642','#6B48FF','#B24020','#C37D16','#0073B1'];
+    let hash=0; for(let c of name) hash=c.charCodeAt(0)+((hash<<5)-hash);
+    return colors[Math.abs(hash)%colors.length];
+  }
+  function initials(name){ return name.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+  async function loadInterviews(){
+    const body=document.getElementById('interviews-body');
+    body.innerHTML='<div class="loading-state"><span class="spin"></span> Loading...</div>';
+    try{
+      const res=await fetch(getBase()+'/interviews');
+      const data=await res.json();
+      document.getElementById('int-count').textContent=' · '+data.length+' total';
+      if(data.length===0){
+        body.innerHTML='<div class="empty-state">No interviews scheduled yet.<br>Use the Schedule button to add one.</div>';
+        return;
+      }
+      const now=new Date();
+      const rows=data.map(iv=>{
+        const dt=new Date(iv.time);
+        const upcoming=dt>=now;
+        const dateStr=dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+        const timeStr=dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+        const bg=avatarColor(iv.candidate);
+        return `<tr>
+          <td style="display:flex;align-items:center;">
+            <div class="int-avatar" style="background:${bg};">${initials(iv.candidate)}</div>
+            <span class="int-name">${iv.candidate}</span>
+          </td>
+          <td style="color:var(--li-muted);font-size:13px;">${iv.recruiter}</td>
+          <td class="int-time-cell">
+            <div class="int-time-date">${dateStr}</div>
+            <div class="int-time-clock">${timeStr}</div>
+          </td>
+          <td><span class="status-pill ${upcoming?'status-upcoming':'status-past'}">${upcoming?'Upcoming':'Completed'}</span></td>
+          <td><a class="meet-link" href="${iv.meeting_link}" target="_blank">Join →</a></td>
+        </tr>`;
+      }).join('');
+      body.innerHTML=`<table class="interviews-table">
+        <thead><tr>
+          <th>Candidate</th><th>Recruiter</th><th>Date &amp; Time</th><th>Status</th><th>Meeting</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    }catch(e){
+      body.innerHTML='<div class="empty-state">Could not load interviews — is Flask running?</div>';
+    }
+  }
+
   async function doSchedule(){
     const candidate=document.getElementById('s-candidate').value.trim();
     const recruiter=document.getElementById('s-recruiter').value.trim();
@@ -368,7 +498,9 @@
       const l=document.getElementById('int-link'); l.textContent=d.meeting_link; l.href=d.meeting_link;
       document.getElementById('int-id').textContent=d.id;
       document.getElementById('int-result').classList.add('show');
-      btn.textContent='Scheduled ✓'; showToast('Interview scheduled!');
+      btn.textContent='Scheduled ✓';
+      showToast('Interview scheduled!');
+      loadInterviews();
     }catch(e){ showToast('Cannot reach Flask at '+getBase()); btn.disabled=false; btn.textContent='Confirm & Schedule'; }
   }
 
@@ -385,6 +517,72 @@
   }
   function closeSummary(num){ document.getElementById('sum-bar-'+num).classList.remove('show'); }
   document.querySelector('.modal-overlay').addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) closeModal(); });
+
+  // ── FEED FILTER ──
+  const filterState = { topic: 'all', sort: 'recent', keyword: '' };
+
+  function toggleChip(el, group) {
+    document.querySelectorAll(`.chip[data-filter="${group}"]`).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    filterState[group] = el.dataset.value;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    filterState.keyword = document.getElementById('filter-keyword').value.trim().toLowerCase();
+    const posts = document.querySelectorAll('.post-card');
+    let visible = 0;
+
+    // Sort
+    const feed = document.querySelector('.feed');
+    const postArr = Array.from(posts);
+    if (filterState.sort === 'top') {
+      postArr.sort((a, b) => parseInt(b.dataset.reactions||0) - parseInt(a.dataset.reactions||0));
+    } else {
+      postArr.sort((a, b) => postArr.indexOf(a) - postArr.indexOf(b));
+    }
+    postArr.forEach(p => feed.appendChild(p));
+
+    posts.forEach(post => {
+      const topics   = post.dataset.topics || '';
+      const text     = post.innerText.toLowerCase();
+      const topicOk  = filterState.topic === 'all' || topics.includes(filterState.topic);
+      const keyOk    = !filterState.keyword || text.includes(filterState.keyword);
+      const show     = topicOk && keyOk;
+      post.classList.toggle('hidden', !show);
+      if (show) visible++;
+
+      // Highlight keyword in post body
+      const body = post.querySelector('.post-body');
+      if (body) {
+        body.innerHTML = body.innerHTML.replace(/<mark class="highlight">([^<]*)<\/mark>/g, '$1');
+        if (filterState.keyword && keyOk) {
+          const re = new RegExp(`(${filterState.keyword.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+          body.innerHTML = body.innerHTML.replace(re, '<mark class="highlight">$1</mark>');
+        }
+      }
+    });
+
+    const nr = document.getElementById('no-results');
+    nr.classList.toggle('show', visible === 0);
+
+    const fr = document.getElementById('filter-results');
+    const isFiltered = filterState.topic !== 'all' || filterState.keyword;
+    fr.classList.toggle('show', isFiltered);
+    if (isFiltered) fr.textContent = `Showing ${visible} of ${posts.length} posts`;
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-keyword').value = '';
+    filterState.keyword = ''; filterState.topic = 'all'; filterState.sort = 'recent';
+    document.querySelectorAll('.chip[data-value="all"]').forEach(c => c.classList.add('active'));
+    document.querySelectorAll('.chip:not([data-value="all"]):not([data-value="recent"])').forEach(c => c.classList.remove('active'));
+    document.querySelector('.chip[data-value="recent"]').classList.add('active');
+    applyFilters();
+  }
+
+  // Load interviews from DB when page opens
+  loadInterviews();
 </script>
 </body>
 </html>
