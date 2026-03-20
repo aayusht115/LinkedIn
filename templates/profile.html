@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LinkedIn – My Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--li-blue:#0A66C2;--li-blue-dark:#004182;--li-bg:#F3F2EF;--li-white:#fff;--li-border:#E0DFDC;--li-text:#000000E6;--li-muted:#00000099;--li-hover:#0000000D;}
+    body{font-family:'Source Sans 3',sans-serif;background:var(--li-bg);color:var(--li-text);font-size:14px;}
+    a{text-decoration:none;color:inherit;}
+    /* ── Nav ── */
+    .nav{background:var(--li-white);border-bottom:1px solid var(--li-border);position:sticky;top:0;z-index:100;padding:0 16px;}
+    .nav-inner{max-width:1128px;margin:0 auto;display:flex;align-items:center;gap:4px;height:52px;}
+    .nav-logo{color:var(--li-blue);margin-right:8px;flex-shrink:0;}
+    .nav-logo svg{width:34px;height:34px;}
+    .nav-icons{display:flex;align-items:center;margin-left:auto;gap:2px;}
+    .nav-item{display:flex;flex-direction:column;align-items:center;padding:4px 12px;cursor:pointer;border-bottom:2px solid transparent;min-width:56px;color:var(--li-muted);font-size:12px;gap:2px;transition:color 0.1s;}
+    .nav-item:hover,.nav-item.active{color:var(--li-text);border-bottom-color:var(--li-text);}
+    .nav-item svg{width:24px;height:24px;}
+    .nav-divider{width:1px;height:32px;background:var(--li-border);margin:0 8px;}
+    .nav-btn{padding:6px 16px;border-radius:24px;border:1px solid var(--li-blue);color:var(--li-blue);font-weight:600;font-size:14px;cursor:pointer;background:transparent;font-family:inherit;}
+    .nav-btn:hover{background:#EBF3FB;}
+    /* ── Layout ── */
+    .layout{max-width:860px;margin:24px auto;padding:0 16px;display:flex;flex-direction:column;gap:16px;}
+    /* ── Cards ── */
+    .card{background:var(--li-white);border:1px solid var(--li-border);border-radius:8px;overflow:hidden;}
+    .card-header{padding:16px 20px 12px;border-bottom:1px solid var(--li-border);display:flex;align-items:center;justify-content:space-between;}
+    .card-title{font-weight:700;font-size:16px;}
+    .card-body{padding:20px;}
+    /* ── Profile banner ── */
+    .banner{height:96px;background:linear-gradient(135deg,#0073B1,#00A0DC);position:relative;}
+    .avatar-wrap{position:absolute;left:24px;bottom:-40px;}
+    .avatar{width:96px;height:96px;border-radius:50%;border:4px solid #fff;background:var(--li-blue);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:32px;}
+    .profile-top{padding:52px 24px 20px;}
+    .profile-name-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    /* ── Form elements ── */
+    .form-group{margin-bottom:16px;}
+    label{display:block;font-size:13px;font-weight:600;color:var(--li-muted);margin-bottom:4px;}
+    input[type=text],textarea{width:100%;border:1px solid var(--li-border);border-radius:4px;padding:8px 12px;font-size:14px;font-family:inherit;color:var(--li-text);outline:none;transition:border-color 0.15s;}
+    input[type=text]:focus,textarea:focus{border-color:var(--li-blue);}
+    textarea{resize:vertical;min-height:80px;line-height:1.5;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    /* ── Skill chips ── */
+    .chips-wrap{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border:1px solid var(--li-border);border-radius:4px;min-height:44px;cursor:text;transition:border-color 0.15s;}
+    .chips-wrap:focus-within{border-color:var(--li-blue);}
+    .chip{display:inline-flex;align-items:center;gap:4px;background:#E8F0FE;color:var(--li-blue);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;}
+    .chip-x{cursor:pointer;font-size:14px;line-height:1;color:var(--li-blue);background:none;border:none;padding:0;font-family:inherit;}
+    .chip-x:hover{color:#c0392b;}
+    .chip-input{border:none;outline:none;font-size:13px;font-family:inherit;color:var(--li-text);min-width:120px;flex:1;}
+    .chip-hint{font-size:11px;color:var(--li-muted);margin-top:4px;}
+    /* ── Save button ── */
+    .btn-save{background:var(--li-blue);color:#fff;border:none;padding:10px 28px;border-radius:24px;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;transition:background 0.15s;}
+    .btn-save:hover{background:var(--li-blue-dark);}
+    .btn-save:disabled{opacity:0.6;cursor:default;}
+    /* ── Toast ── */
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1d2226;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3);}
+    /* ── Section heading ── */
+    .section-hint{font-size:12px;color:var(--li-muted);margin-top:-4px;margin-bottom:12px;}
+    /* ── Experience / Education entries ── */
+    .entry{border:1px solid var(--li-border);border-radius:6px;padding:12px;margin-bottom:10px;position:relative;}
+    .entry-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+    .entry-delete{background:none;border:none;color:var(--li-muted);cursor:pointer;font-size:18px;line-height:1;padding:0;}
+    .entry-delete:hover{color:#c0392b;}
+    .add-entry{display:inline-flex;align-items:center;gap:6px;color:var(--li-blue);font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;font-family:inherit;padding:4px 0;}
+    .add-entry:hover{text-decoration:underline;}
+    /* ── Back link ── */
+    .back-link{display:inline-flex;align-items:center;gap:6px;color:var(--li-blue);font-weight:600;font-size:14px;cursor:pointer;}
+    .back-link:hover{text-decoration:underline;}
+    .sync-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+    .sync-aligned{background:#E8F5EE;color:#057642;}
+    .sync-partial,.sync-needs_profile{background:#FFF8E1;color:#856404;}
+    .sync-mismatch,.sync-missing_resume{background:#FFF4F2;color:#c0392b;}
+    .resume-box{border:1px dashed var(--li-border);border-radius:8px;padding:16px;}
+    .resume-link{color:var(--li-blue);font-weight:700;font-size:13px;}
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-logo" href="/candidate">
+      <svg viewBox="0 0 34 34" fill="currentColor"><path d="M34 2.5A2.5 2.5 0 0031.5 0h-29A2.5 2.5 0 000 2.5v29A2.5 2.5 0 002.5 34h29a2.5 2.5 0 002.5-2.5v-29zM10.1 28.9H5.1V13h5v15.9zm-2.5-18a2.9 2.9 0 110-5.8 2.9 2.9 0 010 5.8zM28.9 28.9h-5v-7.8c0-1.9-.7-3.1-2.3-3.1-1.3 0-2 .9-2.3 1.7-.1.3-.1.7-.1 1.1v8.1h-5s.1-13.2 0-14.6h5v2.1a5 5 0 014.5-2.5c3.3 0 5.7 2.1 5.7 6.7v8.3z"/></svg>
+    </a>
+    <div class="nav-icons">
+      <a class="nav-item" href="/candidate">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Jobs
+      </a>
+      <div class="nav-divider"></div>
+      <a class="nav-item active" href="/profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Profile
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Content ── -->
+<div class="layout">
+
+  <!-- VIEW MODE -->
+  <div id="profile-view">
+    <div class="card">
+      <div class="banner">
+        <div class="avatar-wrap">
+          <div class="avatar" id="view-avatar">?</div>
+        </div>
+      </div>
+      <div style="padding: 52px 24px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+          <div>
+          <div id="view-name" style="font-size:22px;font-weight:700;">—</div>
+          <div id="view-headline" style="font-size:14px;color:var(--li-muted);margin-top:2px;">—</div>
+          <div id="view-one-liner" style="font-size:13px;color:var(--li-text);margin-top:8px;font-weight:600;"></div>
+          <div id="view-location" style="font-size:13px;color:var(--li-muted);margin-top:4px;"></div>
+        </div>
+          <button onclick="showEditMode()" style="background:var(--li-blue);color:#fff;border:none;padding:8px 20px;border-radius:24px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;">Edit Profile</button>
+        </div>
+        <div id="view-bio" style="margin-top:14px;font-size:14px;line-height:1.6;color:var(--li-text);"></div>
+        <div id="view-skills" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;"></div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="card" id="view-exp-card" style="display:none;">
+      <div class="card-header"><div class="card-title">Experience</div></div>
+      <div class="card-body" id="view-exp-body"></div>
+    </div>
+
+    <!-- Education -->
+    <div class="card" id="view-edu-card" style="display:none;">
+      <div class="card-header"><div class="card-title">Education</div></div>
+      <div class="card-body" id="view-edu-body"></div>
+    </div>
+
+    <div class="card" id="view-resume-card" style="display:none;">
+      <div class="card-header"><div class="card-title">Resume</div></div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <div id="view-resume-name" style="font-size:14px;font-weight:700;">—</div>
+            <div id="view-resume-note" style="font-size:13px;color:var(--li-muted);margin-top:6px;line-height:1.6;"></div>
+          </div>
+          <div id="view-sync-pill" class="sync-pill sync-needs_profile">Profile sync pending</div>
+        </div>
+        <div style="margin-top:12px;">
+          <a id="view-resume-link" class="resume-link" href="/profile/resume?user=candidate_default" target="_blank" rel="noopener">Open resume PDF</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT MODE (hidden by default if profile exists) -->
+  <div id="profile-edit" style="display:none;">
+
+    <!-- Edit basic info -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Basic Information</div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="f-name" placeholder="e.g. Aayush Thakur"/>
+          </div>
+          <div class="form-group">
+            <label>Headline</label>
+            <input type="text" id="f-headline" placeholder="e.g. Frontend Engineer • Open to Work"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="f-location" placeholder="e.g. London, United Kingdom"/>
+        </div>
+        <div class="form-group">
+          <label>One-Line Intro</label>
+          <input type="text" id="f-one-liner" maxlength="140" placeholder="e.g. Product-minded frontend engineer with a strong data and UX lens"/>
+        </div>
+        <div class="form-group">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+            <label style="margin-bottom:0;">About / Bio</label>
+            <button type="button" onclick="generateBioFromResume()" style="background:#EEF3F8;color:var(--li-blue);border:1px solid #C5D9EF;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+              AI Generate Bio
+            </button>
+          </div>
+          <textarea id="f-bio" placeholder="Tell recruiters about yourself, your goals, and what you're looking for..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Skills -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Skills</div>
+      </div>
+      <div class="card-body">
+        <p class="section-hint">These skills are used automatically in Job Fit scores across all job listings.</p>
+        <div class="form-group">
+          <label>Add Skills</label>
+          <div class="chips-wrap" id="skills-chips" onclick="document.getElementById('skill-chip-input').focus()">
+            <input class="chip-input" id="skill-chip-input" placeholder="Type a skill and press Enter or comma…"/>
+          </div>
+          <div class="chip-hint">Press <strong>Enter</strong> or <strong>,</strong> to add · Click × to remove</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Experience</div>
+      </div>
+      <div class="card-body">
+        <p class="section-hint">Add your work experience. Each entry will help recruiters understand your background.</p>
+        <div id="exp-entries"></div>
+        <button class="add-entry" onclick="addEntry('exp')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add experience
+        </button>
+      </div>
+    </div>
+
+    <!-- Education -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Education</div>
+      </div>
+      <div class="card-body">
+        <p class="section-hint">Add your educational background.</p>
+        <div id="edu-entries"></div>
+        <button class="add-entry" onclick="addEntry('edu')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add education
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Resume PDF</div>
+      </div>
+      <div class="card-body">
+        <div class="resume-box">
+          <div style="font-size:14px;font-weight:700;color:var(--li-text);margin-bottom:6px;">Upload the resume you want to apply with</div>
+          <div style="font-size:13px;color:var(--li-muted);line-height:1.6;margin-bottom:12px;">We extract text from the PDF, compare it with your profile, and use both profile + resume when you apply for jobs.</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="file" id="resume-file" accept="application/pdf" style="font-family:inherit;"/>
+            <button type="button" class="btn-save" id="resume-btn" onclick="uploadResume()" style="padding:8px 18px;font-size:14px;">Upload Resume</button>
+            <button type="button" onclick="generateBioFromResume()" style="background:#fff;border:1px solid var(--li-border);padding:8px 16px;border-radius:24px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;color:var(--li-muted);">
+              Refresh AI Bio
+            </button>
+          </div>
+          <div id="resume-status" style="font-size:13px;color:var(--li-muted);margin-top:10px;"></div>
+          <div id="resume-sync-note" style="font-size:13px;color:var(--li-text);margin-top:8px;line-height:1.6;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save / Cancel -->
+    <div style="display:flex;justify-content:space-between;padding-bottom:32px;">
+      <button onclick="showViewMode()" style="background:transparent;border:1px solid var(--li-border);padding:10px 20px;border-radius:24px;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;color:var(--li-muted);">Cancel</button>
+      <button class="btn-save" id="save-btn" onclick="saveProfile()">Save Profile</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const CANDIDATE_ID = 'candidate_default';
+  const BASE = window.location.origin;
+  const DEFAULT_NAME = 'Aayush Thakur';
+
+  // ── View / Edit mode toggle ─────────────────────────────────────────────────
+  function showEditMode() {
+    document.getElementById('profile-view').style.display = 'none';
+    document.getElementById('profile-edit').style.display = 'block';
+  }
+
+  function showViewMode() {
+    document.getElementById('profile-view').style.display = 'block';
+    document.getElementById('profile-edit').style.display = 'none';
+  }
+
+  function renderViewMode(p) {
+    if (!p || !p.user_identifier) {
+      // no profile yet — show edit mode
+      showEditMode();
+      return;
+    }
+    document.getElementById('view-exp-card').style.display = 'none';
+    document.getElementById('view-edu-card').style.display = 'none';
+    document.getElementById('view-resume-card').style.display = p.resume_filename ? 'block' : 'none';
+    document.getElementById('view-exp-body').innerHTML = '';
+    document.getElementById('view-edu-body').innerHTML = '';
+    const name = p.name || 'Your Name';
+    document.getElementById('view-avatar').textContent = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '?';
+    document.getElementById('view-name').textContent = name;
+    document.getElementById('view-headline').textContent = p.headline || '—';
+    document.getElementById('view-one-liner').textContent = p.one_liner || '';
+    document.getElementById('view-location').innerHTML = p.location ? `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> ${p.location}` : '';
+    document.getElementById('view-bio').textContent = p.bio || '';
+
+    const skillsEl = document.getElementById('view-skills');
+    const skillList = p.skills ? p.skills.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    skillsEl.innerHTML = skillList.map(s => `<span style="background:#E8F0FE;color:var(--li-blue);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;">${s}</span>`).join('');
+
+    document.getElementById('resume-status').textContent = p.resume_filename ? `Current resume: ${p.resume_filename}` : 'No resume uploaded yet.';
+    document.getElementById('resume-sync-note').textContent = p.profile_sync_note || 'Upload a resume to compare it against your profile.';
+    if (p.resume_filename) {
+      document.getElementById('view-resume-name').textContent = p.resume_filename;
+      document.getElementById('view-resume-link').href = `/profile/resume?user=${encodeURIComponent(CANDIDATE_ID)}`;
+      document.getElementById('view-resume-note').textContent = p.profile_sync_note || 'Resume uploaded and ready to be used with applications.';
+      const pill = document.getElementById('view-sync-pill');
+      const status = p.profile_sync_status || 'needs_profile';
+      pill.className = `sync-pill sync-${status}`;
+      pill.textContent =
+        status === 'aligned' ? 'Profile in sync' :
+        status === 'partial' ? 'Minor sync gaps' :
+        status === 'mismatch' ? 'Profile mismatch' :
+        status === 'missing_resume' ? 'Resume missing' :
+        'Profile sync pending';
+    }
+
+    // experience
+    try {
+      const expList = JSON.parse(p.experience || '[]');
+      if (expList.length > 0) {
+        document.getElementById('view-exp-card').style.display = 'block';
+        document.getElementById('view-exp-body').innerHTML = expList.map(e => `
+          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--li-border);">
+            <div style="width:44px;height:44px;border-radius:4px;border:1px solid var(--li-border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--li-blue);flex-shrink:0;">
+              ${(e.company||'?').slice(0,2).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">${e.title||''}</div>
+              <div style="font-size:13px;color:var(--li-muted);">${e.company||''} · ${e.location||''}</div>
+              <div style="font-size:12px;color:var(--li-muted);">${e.duration||''}</div>
+              ${e.desc ? `<div style="font-size:13px;margin-top:6px;line-height:1.5;">${e.desc}</div>` : ''}
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch(e) {}
+
+    // education
+    try {
+      const eduList = JSON.parse(p.education || '[]');
+      if (eduList.length > 0) {
+        document.getElementById('view-edu-card').style.display = 'block';
+        document.getElementById('view-edu-body').innerHTML = eduList.map(e => `
+          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--li-border);">
+            <div style="width:44px;height:44px;border-radius:4px;border:1px solid var(--li-border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--li-blue);flex-shrink:0;">
+              ${(e.school||'?').slice(0,2).toUpperCase()}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:14px;">${e.school||''}</div>
+              <div style="font-size:13px;color:var(--li-muted);">${e.degree||''}</div>
+              <div style="font-size:12px;color:var(--li-muted);">${e.years||''}</div>
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch(e) {}
+
+    showViewMode();
+  }
+
+  function applyProfileToForm(p) {
+    document.getElementById('f-name').value = p.name || DEFAULT_NAME;
+    document.getElementById('f-headline').value = p.headline || '';
+    document.getElementById('f-one-liner').value = p.one_liner || p.headline || '';
+    document.getElementById('f-location').value = p.location || '';
+    document.getElementById('f-bio').value = p.bio || '';
+    skills = p.skills ? p.skills.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    renderChips();
+    loadEntries('exp', p.experience);
+    loadEntries('edu', p.education);
+    document.getElementById('resume-status').textContent = p.resume_filename ? `Current resume: ${p.resume_filename}` : 'No resume uploaded yet.';
+    document.getElementById('resume-sync-note').textContent = p.profile_sync_note || 'Upload a resume to compare it against your profile.';
+  }
+
+  // ── Skill chips ────────────────────────────────────────────────────────────
+  let skills = [];
+
+  function renderChips() {
+    const wrap = document.getElementById('skills-chips');
+    const input = document.getElementById('skill-chip-input');
+    wrap.querySelectorAll('.chip').forEach(c => c.remove());
+    skills.forEach((s, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = `${s} <button class="chip-x" onclick="removeSkill(${i})">×</button>`;
+      wrap.insertBefore(chip, input);
+    });
+  }
+
+  function removeSkill(i) {
+    skills.splice(i, 1);
+    renderChips();
+  }
+
+  function addSkillFromInput() {
+    const input = document.getElementById('skill-chip-input');
+    const val = input.value.replace(/,/g, '').trim();
+    if (val && !skills.includes(val)) {
+      skills.push(val);
+      renderChips();
+    }
+    input.value = '';
+  }
+
+  document.getElementById('skill-chip-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addSkillFromInput(); }
+    else if (e.key === 'Backspace' && e.target.value === '' && skills.length) {
+      skills.pop(); renderChips();
+    }
+  });
+  document.getElementById('skill-chip-input').addEventListener('blur', addSkillFromInput);
+
+  // ── Experience / Education entries ─────────────────────────────────────────
+  function addEntry(type) {
+    const container = document.getElementById(type === 'exp' ? 'exp-entries' : 'edu-entries');
+    const idx = container.children.length;
+    const entry = document.createElement('div');
+    entry.className = 'entry';
+    if (type === 'exp') {
+      entry.innerHTML = `
+        <div class="entry-head">
+          <div style="font-weight:600;font-size:13px;color:var(--li-muted);">Experience ${idx+1}</div>
+          <button class="entry-delete" onclick="this.closest('.entry').remove()">×</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Job Title</label>
+            <input type="text" class="exp-title" placeholder="e.g. Software Engineer"/>
+          </div>
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Company</label>
+            <input type="text" class="exp-company" placeholder="e.g. Google"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Duration</label>
+            <input type="text" class="exp-duration" placeholder="e.g. Jan 2022 – Present"/>
+          </div>
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Location</label>
+            <input type="text" class="exp-loc" placeholder="e.g. London, UK"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Description</label>
+          <textarea class="exp-desc" style="min-height:60px" placeholder="Key responsibilities, achievements…"></textarea>
+        </div>`;
+    } else {
+      entry.innerHTML = `
+        <div class="entry-head">
+          <div style="font-weight:600;font-size:13px;color:var(--li-muted);">Education ${idx+1}</div>
+          <button class="entry-delete" onclick="this.closest('.entry').remove()">×</button>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Institution</label>
+            <input type="text" class="edu-school" placeholder="e.g. University of Edinburgh"/>
+          </div>
+          <div class="form-group" style="margin-bottom:8px">
+            <label>Degree / Field</label>
+            <input type="text" class="edu-degree" placeholder="e.g. BSc Computer Science"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Years</label>
+          <input type="text" class="edu-years" placeholder="e.g. 2018 – 2022"/>
+        </div>`;
+    }
+    container.appendChild(entry);
+  }
+
+  function serializeEntries(type) {
+    const selector = type === 'exp' ? '#exp-entries .entry' : '#edu-entries .entry';
+    const entries = [];
+    document.querySelectorAll(selector).forEach(el => {
+      if (type === 'exp') {
+        entries.push({
+          title:    el.querySelector('.exp-title')?.value.trim(),
+          company:  el.querySelector('.exp-company')?.value.trim(),
+          duration: el.querySelector('.exp-duration')?.value.trim(),
+          location: el.querySelector('.exp-loc')?.value.trim(),
+          desc:     el.querySelector('.exp-desc')?.value.trim()
+        });
+      } else {
+        entries.push({
+          school: el.querySelector('.edu-school')?.value.trim(),
+          degree: el.querySelector('.edu-degree')?.value.trim(),
+          years:  el.querySelector('.edu-years')?.value.trim()
+        });
+      }
+    });
+    return JSON.stringify(entries);
+  }
+
+  function loadEntries(type, jsonStr) {
+    const container = document.getElementById(type === 'exp' ? 'exp-entries' : 'edu-entries');
+    container.innerHTML = '';
+    if (!jsonStr) return;
+    let items;
+    try { items = JSON.parse(jsonStr); } catch { return; }
+    items.forEach(() => addEntry(type));
+    const els = container.querySelectorAll('.entry');
+    items.forEach((item, i) => {
+      const el = els[i];
+      if (!el) return;
+      if (type === 'exp') {
+        if(el.querySelector('.exp-title')) el.querySelector('.exp-title').value = item.title||'';
+        if(el.querySelector('.exp-company')) el.querySelector('.exp-company').value = item.company||'';
+        if(el.querySelector('.exp-duration')) el.querySelector('.exp-duration').value = item.duration||'';
+        if(el.querySelector('.exp-loc')) el.querySelector('.exp-loc').value = item.location||'';
+        if(el.querySelector('.exp-desc')) el.querySelector('.exp-desc').value = item.desc||'';
+      } else {
+        if(el.querySelector('.edu-school')) el.querySelector('.edu-school').value = item.school||'';
+        if(el.querySelector('.edu-degree')) el.querySelector('.edu-degree').value = item.degree||'';
+        if(el.querySelector('.edu-years')) el.querySelector('.edu-years').value = item.years||'';
+      }
+    });
+  }
+
+  // ── Load profile ───────────────────────────────────────────────────────────
+  async function loadProfile() {
+    const res = await fetch(`${BASE}/profile/data?user=${CANDIDATE_ID}`);
+    const p = await res.json();
+    if (p && p.user_identifier) {
+      applyProfileToForm(p);
+    } else {
+      applyProfileToForm({ name: DEFAULT_NAME });
+    }
+    renderViewMode(p);
+  }
+
+  // ── Save profile ───────────────────────────────────────────────────────────
+  async function saveProfile() {
+    addSkillFromInput();
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    const payload = {
+      user_identifier: CANDIDATE_ID,
+      name:       document.getElementById('f-name').value.trim() || DEFAULT_NAME,
+      headline:   document.getElementById('f-headline').value.trim(),
+      one_liner:  document.getElementById('f-one-liner').value.trim(),
+      location:   document.getElementById('f-location').value.trim(),
+      bio:        document.getElementById('f-bio').value.trim(),
+      skills:     skills.join(','),
+      experience: serializeEntries('exp'),
+      education:  serializeEntries('edu'),
+    };
+
+    try {
+      const res = await fetch(`${BASE}/profile/data`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('save failed');
+      const saved = await res.json();
+      showToast('Profile saved!');
+      renderViewMode(saved);
+      showViewMode();
+    } catch(e) {
+      showToast('Error saving profile. Please try again.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Profile';
+    }
+  }
+
+  function showToast(msg, isError=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#c0392b' : '#1d2226';
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3000);
+  }
+
+  async function uploadResume() {
+    const fileInput = document.getElementById('resume-file');
+    const file = fileInput.files[0];
+    if (!file) {
+      showToast('Choose a PDF resume first.', true);
+      return;
+    }
+    const btn = document.getElementById('resume-btn');
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+    const form = new FormData();
+    form.append('user', CANDIDATE_ID);
+    form.append('resume', file);
+    try {
+      const res = await fetch(`${BASE}/profile/resume`, { method: 'POST', body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'upload failed');
+      if (data.profile) {
+        applyProfileToForm(data.profile);
+        renderViewMode(data.profile);
+      }
+      showToast(data.used_ai === false ? 'Resume uploaded and profile filled from extracted resume details.' : 'Resume uploaded and profile auto-filled.');
+      fileInput.value = '';
+    } catch (e) {
+      showToast(e.message || 'Could not upload resume.', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Upload Resume';
+    }
+  }
+
+  async function generateBioFromResume() {
+    try {
+      const res = await fetch(`${BASE}/profile/ai-bio`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ user: CANDIDATE_ID })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not generate bio.');
+      document.getElementById('f-bio').value = data.bio || '';
+      showToast('AI bio generated from your resume.');
+      showEditMode();
+    } catch (e) {
+      showToast(e.message || 'Could not generate bio.', true);
+    }
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

@@ -8,7 +8,11 @@ def schedule_interview(data):
         "recruiter": data["recruiter"],
         "time": data["time"],
         "job_id": data.get("job_id") or None,
-        "meeting_link": "https://meet.fake/" + str(uuid.uuid4())[:6]
+        "application_id": data.get("application_id") or None,
+        "round_id": data.get("round_id") or None,
+        "round_type": data.get("round_type") or None,
+        "interviewer_name": data.get("interviewer_name") or data.get("recruiter"),
+        "meeting_link": "https://meet.google.com/new"
     }
     save_interview(interview)
     return interview

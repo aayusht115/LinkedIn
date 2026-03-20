@@ -31,6 +31,10 @@
     .profile-info{padding:8px 12px 12px;text-align:center;}
     .profile-name{font-weight:700;font-size:15px;margin-bottom:2px;}
     .profile-title{font-size:12px;color:var(--li-muted);}
+    .profile-location{font-size:12px;color:var(--li-muted);margin-top:2px;}
+    .profile-bio-preview{font-size:12px;color:var(--li-muted);margin-top:8px;line-height:1.45;text-align:left;}
+    .profile-link-row{display:flex;justify-content:center;margin-top:10px;}
+    .profile-link-btn{font-size:12px;font-weight:700;color:var(--li-blue);}
     .profile-stats{border-top:1px solid var(--li-border);padding:8px 12px;}
     .stat-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;cursor:pointer;}
     .stat-row:hover{color:var(--li-blue);}
@@ -155,7 +159,7 @@
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="24" height="24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
         Jobs
       </div>
-      <div class="nav-item" onclick="openScoreModal()">
+      <div class="nav-item">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="24" height="24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
         Recruiters
       </div>
@@ -164,6 +168,10 @@
         Messages
       </div>
       <div class="nav-divider"></div>
+      <a class="nav-item" href="/profile" style="text-decoration:none;">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="24" height="24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Me
+      </a>
       <button class="nav-btn">Try Premium</button>
     </div>
   </div>
@@ -173,12 +181,15 @@
 
   <!-- LEFT -->
   <div class="sidebar-left">
-    <div class="profile-card">
+    <div class="profile-card" onclick="window.location='/profile'" style="cursor:pointer;">
       <div class="profile-banner"></div>
-      <div class="profile-avatar">JT</div>
+      <div class="profile-avatar" id="candidate-avatar">JT</div>
       <div class="profile-info">
-        <div class="profile-name">Jamie Torres</div>
-        <div class="profile-title">Senior Frontend Engineer · London</div>
+        <div class="profile-name" id="candidate-name">Jamie Torres</div>
+        <div class="profile-title" id="candidate-headline">Senior Frontend Engineer</div>
+        <div class="profile-location" id="candidate-location">London</div>
+        <div class="profile-bio-preview" id="candidate-bio">Open your profile to add your full background, experience, and education.</div>
+        <div class="profile-link-row"><span class="profile-link-btn">View full profile →</span></div>
       </div>
       <div class="profile-stats">
         <div class="stat-row"><span>Profile viewers</span><span class="stat-num">89</span></div>
@@ -187,74 +198,29 @@
       </div>
     </div>
     <div class="sidebar-card">
-      <div class="sidebar-link" onclick="openScoreModal()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M6 20v-2a6 6 0 0112 0v2"/></svg>
-        Recruiter Score
-      </div>
-      <div class="sidebar-link" onclick="openJobFitModal()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        Job Fit Score
-      </div>
       <div style="border-top:1px solid var(--li-border);margin:8px 0;"></div>
-      <div class="sidebar-link">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
-        Saved Jobs
+      <div class="sidebar-link" onclick="loadJobs('saved')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        Saved Jobs <span id="saved-count" style="margin-left:auto;font-size:11px;font-weight:700;color:var(--li-blue);"></span>
       </div>
-      <div class="sidebar-link">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-        Applications
+      <div class="sidebar-link" onclick="showApplied()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Applied Jobs <span id="applied-count" style="margin-left:auto;font-weight:700;color:var(--li-blue);font-size:12px;"></span>
       </div>
     </div>
   </div>
 
   <!-- FEED -->
   <div class="feed">
-    <div class="settings-bar">
-      <label>Flask URL:</label>
-      <input type="text" id="global-base" value="http://127.0.0.1:5000" />
-      <span style="color:#856404;">← your backend URL</span>
-    </div>
 
-    <!-- Job recommendations -->
-    <div class="job-card">
-      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Jobs picked for you</div>
+    <!-- Job recommendations (loaded dynamically) -->
+    <div class="job-card" id="jobs-card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+        <div style="font-weight:700;font-size:15px;">Jobs picked for you</div>
+        <button onclick="loadJobs()" style="background:none;border:none;font-size:12px;color:var(--li-blue);cursor:pointer;font-weight:600;font-family:inherit;">↻ Refresh</button>
+      </div>
       <div style="font-size:12px;color:var(--li-muted);margin-bottom:8px;">Based on your profile and activity</div>
-      <div class="job-item">
-        <div class="job-logo">SH</div>
-        <div class="job-info">
-          <div class="job-title">Senior Frontend Engineer</div>
-          <div class="job-company">Shopify · London, UK · Remote</div>
-          <div class="job-meta">Active 2h ago · 47 applicants</div>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <button class="recruiter-check-btn" onclick="prefillScore('rec_shopify_001')">✦ Recruiter score →</button>
-            <button class="recruiter-check-btn" onclick="prefillJobFit('3+ years React, TypeScript, Node.js, REST APIs, CI/CD, Agile')">✦ Job fit score →</button>
-          </div>
-        </div>
-      </div>
-      <div class="job-item">
-        <div class="job-logo">ST</div>
-        <div class="job-info">
-          <div class="job-title">React Developer</div>
-          <div class="job-company">Stripe · Dublin, Ireland · Hybrid</div>
-          <div class="job-meta">Active 5h ago · 112 applicants</div>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <button class="recruiter-check-btn" onclick="prefillScore('rec_stripe_002')">✦ Recruiter score →</button>
-            <button class="recruiter-check-btn" onclick="prefillJobFit('React, JavaScript, payment systems, 2+ years experience, testing, documentation')">✦ Job fit score →</button>
-          </div>
-        </div>
-      </div>
-      <div class="job-item">
-        <div class="job-logo">DM</div>
-        <div class="job-info">
-          <div class="job-title">UI Engineer</div>
-          <div class="job-company">DeepMind · London, UK · On-site</div>
-          <div class="job-meta">Active 1d ago · 203 applicants</div>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <button class="recruiter-check-btn" onclick="prefillScore('rec_deepmind_003')">✦ Recruiter score →</button>
-            <button class="recruiter-check-btn" onclick="prefillJobFit('React, Python, data visualisation, ML knowledge, 4+ years experience, strong communication')">✦ Job fit score →</button>
-          </div>
-        </div>
-      </div>
+      <div id="jobs-list"><div style="padding:12px 0;font-size:13px;color:var(--li-muted);"><span class="spin"></span> Loading jobs…</div></div>
     </div>
 
     <!-- Post composer -->
@@ -391,14 +357,6 @@
       <div style="border-top:1px solid var(--li-border);margin:6px 0;"></div>
       <div class="news-item"><div class="news-headline">Remote work hits 5-year low</div><div class="news-meta">8h ago · 12,320 readers</div></div>
     </div>
-    <div class="news-card" style="background:#EEF3F8;border-color:#C5D9EF;">
-      <div style="font-size:11px;font-weight:700;color:#0A66C2;background:#C5D9EF;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:8px;">✦ AI Features active</div>
-      <div style="font-size:13px;color:#004182;margin-bottom:10px;">Know your recruiter and your job fit before you apply.</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <button onclick="openScoreModal()" style="width:100%;background:var(--li-blue);color:#fff;border:none;border-radius:4px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Check Recruiter Score</button>
-        <button onclick="openJobFitModal()" style="width:100%;background:transparent;color:var(--li-blue);border:1px solid var(--li-blue);border-radius:4px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Check Job Fit Score</button>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -410,21 +368,41 @@
       <button class="modal-close" onclick="closeModal('score')">×</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:13px;color:#004182;margin-bottom:16px;background:#EEF3F8;padding:8px 12px;border-radius:6px;">GET /recruiter_score/:id → ML model — know your recruiter's track record before you apply.</div>
       <div class="field">
-        <label>Recruiter ID</label>
-        <input type="text" id="r-id" placeholder="e.g. rec_001" />
+        <label>Select a recruiter</label>
+        <select id="r-id" style="width:100%;border:1px solid var(--li-border);border-radius:4px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff;color:#1d2226;">
+          <option value="">— choose a recruiter —</option>
+        </select>
       </div>
       <div id="r-score-display" style="display:none;">
-        <div class="score-result">
-          <div class="score-big" id="r-num">—</div>
-          <div class="score-tier" id="r-tier"></div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:#f3f6f8;border-radius:8px;">
+          <div id="r-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--li-blue);color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">—</div>
+          <div>
+            <div id="r-name" style="font-weight:700;font-size:15px;color:#1d2226;">—</div>
+            <div id="r-company" style="font-size:13px;color:var(--li-muted);">—</div>
+          </div>
+          <div style="margin-left:auto;text-align:center;">
+            <div class="score-big" id="r-num" style="font-size:32px;line-height:1;">—</div>
+            <div style="font-size:11px;color:var(--li-muted);margin-top:2px;">/ 100</div>
+          </div>
         </div>
         <div class="score-bars">
-          <div class="bar-row"><div class="bar-label"><span>Response Time</span><span id="bl1">—</span></div><div class="bar-track"><div class="bar-fill" id="bar1" style="width:0%"></div></div></div>
-          <div class="bar-row"><div class="bar-label"><span>Hire Rate</span><span id="bl2">—</span></div><div class="bar-track"><div class="bar-fill" id="bar2" style="width:0%"></div></div></div>
-          <div class="bar-row"><div class="bar-label"><span>Rated by Candidates</span><span id="bl3">—</span></div><div class="bar-track"><div class="bar-fill" id="bar3" style="width:0%"></div></div></div>
-          <div class="bar-row"><div class="bar-label"><span>Cancellations</span><span id="bl4">—</span></div><div class="bar-track"><div class="bar-fill" id="bar4" style="width:0%"></div></div></div>
+          <div class="bar-row">
+            <div class="bar-label"><span>Response Time</span><span id="bl1">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar1" style="width:0%"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span>Hire Rate</span><span id="bl2">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar2" style="width:0%"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span>Candidate Rating</span><span id="bl3">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar3" style="width:0%"></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label"><span>Cancellations (lower = better)</span><span id="bl4">—</span></div>
+            <div class="bar-track"><div class="bar-fill" id="bar4" style="width:0%;background:#e85c41;"></div></div>
+          </div>
         </div>
         <div class="score-advice" id="r-advice"></div>
       </div>
@@ -444,22 +422,51 @@
       <button class="modal-close" onclick="closeModal('jobfit')">×</button>
     </div>
     <div class="modal-body">
-      <div style="font-size:13px;color:#004182;margin-bottom:16px;background:#EEF3F8;padding:8px 12px;border-radius:6px;">Enter your skills and the job requirements — we'll score how well you match.</div>
       <div class="field">
-        <label>Your skills</label>
-        <textarea id="jf-skills" placeholder="e.g. React, TypeScript, Node.js, REST APIs, Agile, 4 years experience..." style="width:100%;border:1px solid var(--li-border);border-radius:4px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;min-height:80px;resize:vertical;"></textarea>
+        <label style="display:flex;justify-content:space-between;">
+          <span>Your skills</span>
+          <a href="/profile" style="font-size:11px;color:var(--li-blue);font-weight:500;text-decoration:none;" title="Manage your skills on your profile">Edit in Profile →</a>
+        </label>
+        <div id="jf-tag-input" style="display:flex;flex-wrap:wrap;gap:6px;border:1px solid var(--li-border);border-radius:4px;padding:8px 10px;min-height:44px;cursor:text;background:#fff;" onclick="document.getElementById('jf-skill-input').focus()">
+          <input id="jf-skill-input" type="text" placeholder="e.g. React, TypeScript…" style="border:none;outline:none;font-size:13px;font-family:inherit;flex:1;min-width:120px;padding:2px 0;" />
+        </div>
       </div>
       <div class="field">
         <label>Job requirements</label>
-        <textarea id="jf-requirements" placeholder="e.g. 3+ years React, experience with TypeScript, familiarity with cloud platforms, strong communication..." style="width:100%;border:1px solid var(--li-border);border-radius:4px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;min-height:80px;resize:vertical;"></textarea>
+        <textarea id="jf-requirements" placeholder="e.g. 3+ years React, experience with TypeScript, familiarity with cloud platforms…" style="width:100%;border:1px solid var(--li-border);border-radius:4px;padding:9px 12px;font-size:14px;font-family:inherit;outline:none;min-height:72px;resize:vertical;box-sizing:border-box;"></textarea>
+      </div>
+      <div id="jf-context" style="display:none;background:#F3F6F8;border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:#1d2226;" id="jf-job-title">—</div>
+        <div style="font-size:12px;color:var(--li-muted);" id="jf-job-subtitle"></div>
       </div>
       <div id="jf-result" style="display:none;">
-        <div class="score-result">
-          <div class="score-big" id="jf-num" style="color:#0A66C2;">—</div>
-          <div class="score-tier" id="jf-tier"></div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+          <div style="text-align:center;">
+            <div class="score-big" id="jf-num" style="color:#0A66C2;font-size:40px;line-height:1;">—</div>
+            <div style="font-size:11px;color:var(--li-muted);margin-top:2px;">/ 100</div>
+          </div>
+          <div style="flex:1;">
+            <div class="score-tier" id="jf-tier" style="margin:0;"></div>
+            <div style="font-size:12px;color:var(--li-muted);margin-top:6px;" id="jf-recommendation"></div>
+          </div>
         </div>
-        <div class="score-bars" id="jf-bars"></div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;color:#004182;margin-bottom:6px;">Profile signals</div>
+          <div id="jf-signals" style="display:flex;flex-direction:column;gap:6px;"></div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:600;color:#057642;margin-bottom:6px;">✓ Matched skills</div>
+          <div id="jf-matched" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;color:#b24020;margin-bottom:6px;">✗ Gaps to address</div>
+          <div id="jf-missing" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+        </div>
         <div class="score-advice" id="jf-advice"></div>
+        <div id="jf-ai-analysis" style="margin-top:12px;background:#F8F4FF;border:1px solid #E1D5F9;border-radius:8px;padding:12px;">
+          <div style="font-size:12px;font-weight:700;color:#7C3AED;margin-bottom:6px;">Qwen AI recommendation</div>
+          <div id="jf-ai-text" style="font-size:13px;line-height:1.6;color:#1d2226;"></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -472,47 +479,241 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  function getBase(){ return (document.getElementById('global-base').value||'http://127.0.0.1:5000').replace(/\/$/,''); }
-  function openScoreModal(){ document.getElementById('modal-score').classList.add('open'); }
-  function openJobFitModal(){ document.getElementById('modal-jobfit').classList.add('open'); }
+  function getBase(){ return window.location.origin; }
+  // ── JOBS (dynamic) ──
+  const CANDIDATE_ID = 'candidate_default';
+  let candidateProfile = null;
+  let currentFitJob = null;
+
+  async function loadJobs(mode='active'){
+    const list = document.getElementById('jobs-list');
+    const header = document.querySelector('#jobs-card > div:first-child > div');
+    list.innerHTML = '<div style="padding:12px 0;font-size:13px;color:var(--li-muted);"><span class="spin"></span> Loading…</div>';
+
+    try{
+      const url = mode==='saved'
+        ? getBase()+'/saved-jobs?user='+CANDIDATE_ID
+        : getBase()+'/jobs?status=active';
+      if(header) header.textContent = mode==='saved'?'Saved Jobs':'Jobs picked for you';
+      const res = await fetch(url);
+      const jobs = await res.json();
+
+      // get applied jobs to mark them
+      let appliedIds = new Set();
+      try {
+        const appliedRes = await fetch(getBase()+'/applications?user='+CANDIDATE_ID);
+        const appliedList = await appliedRes.json();
+        appliedIds = new Set(appliedList.map(a=>a.job_id));
+      } catch(e) {}
+
+      if(jobs.length===0){
+        list.innerHTML = '<div style="padding:12px 0;font-size:13px;color:var(--li-muted);">'+(mode==='saved'?'No saved jobs yet.':'No active job openings right now.')+'</div>';
+        return;
+      }
+      list.innerHTML = jobs.map(j=>{
+        const applied = appliedIds.has(j.id);
+        return `
+        <a href="/job/${j.id}" class="job-item" style="text-decoration:none;color:inherit;display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--li-border);">
+          <div class="job-logo">${j.logo||j.company.slice(0,2).toUpperCase()}</div>
+          <div class="job-info" style="flex:1;min-width:0;">
+            <div class="job-title">${j.title}</div>
+            <div class="job-company">${j.company} · ${j.location} · ${j.work_type}</div>
+            <div class="job-meta">${j.applicants||0} applicants${j.experience_level?' · '+j.experience_level:''}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+              <button class="recruiter-check-btn" onclick="event.preventDefault();prefillScore('${j.recruiter_id}')">✦ Recruiter score →</button>
+              <button class="recruiter-check-btn" onclick='event.preventDefault();prefillJobFit(${JSON.stringify(j.id)}, ${JSON.stringify(j.requirements || j.qualifications || j.skills || "")}, ${JSON.stringify(j.title || "")}, ${JSON.stringify(j.company || "")}, ${JSON.stringify(j.location || "")}, ${JSON.stringify(j.work_type || "")})'>✦ AI fit →</button>
+            </div>
+          </div>
+          <button onclick="event.preventDefault();toggleSave('${j.id}',this)" data-saved="${j.saved_at?'1':'0'}"
+            style="background:none;border:1px solid var(--li-border);border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;color:${j.saved_at?'#057642':'var(--li-muted)'};flex-shrink:0;align-self:flex-start;margin-top:2px;">
+            ${j.saved_at?'✓ Saved':'Save'}
+          </button>
+          <button onclick="event.preventDefault();applyJob('${j.id}',this)" data-applied="${applied?'1':'0'}"
+            style="background:${applied?'#057642':'var(--li-blue)'};color:#fff;border:none;border-radius:4px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap;font-weight:600;flex-shrink:0;align-self:flex-start;margin-top:2px;">
+            ${applied?'Applied ✓':'Apply'}
+          </button>
+        </a>`;
+      }).join('');
+    }catch(e){ list.innerHTML='<div style="padding:12px 0;font-size:13px;color:#c0392b;">Could not load jobs.</div>'; }
+
+    updateSavedCount();
+  }
+
+  async function toggleSave(jobId, btn){
+    const wasSaved = btn.dataset.saved === '1';
+    btn.textContent = wasSaved ? 'Save' : '✓ Saved';
+    btn.style.color = wasSaved ? 'var(--li-muted)' : '#057642';
+    btn.dataset.saved = wasSaved ? '0' : '1';
+    try{
+      await fetch(getBase()+'/jobs/'+jobId+'/save', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user:CANDIDATE_ID})
+      });
+      showToast(wasSaved ? 'Job removed from saved.' : 'Job saved!');
+      updateSavedCount();
+    }catch(e){ showToast('Could not save job.'); }
+  }
+
+  async function updateSavedCount(){
+    try{
+      const res = await fetch(getBase()+'/saved-jobs?user='+CANDIDATE_ID);
+      const jobs = await res.json();
+      const el = document.getElementById('saved-count');
+      if(el) el.textContent = jobs.length > 0 ? jobs.length : '';
+    }catch(e){}
+  }
+
+  async function applyJob(jobId, btn) {
+    if(btn.dataset.applied === '1') return;
+
+    const note = prompt('Add a cover note (optional):') ?? '';
+    if(note === null) return; // cancelled
+
+    btn.disabled = true; btn.textContent = 'Applying…';
+    try {
+      const res = await fetch(getBase()+'/jobs/'+jobId+'/apply', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({user: CANDIDATE_ID, cover_note: note})
+      });
+      if(res.status === 409) { showToast('You have already applied to this job.'); btn.disabled=false; btn.textContent='Applied ✓'; btn.dataset.applied='1'; btn.style.background='#057642'; return; }
+      if(!res.ok) throw new Error();
+      btn.dataset.applied = '1';
+      btn.textContent = 'Applied ✓';
+      btn.style.background = '#057642';
+      btn.disabled = false;
+      showToast('Application submitted!');
+      updateAppliedCount();
+    } catch(e) {
+      showToast('Could not apply. Please try again.');
+      btn.disabled=false; btn.textContent='Apply';
+    }
+  }
+
+  async function updateAppliedCount() {
+    try {
+      const res = await fetch(getBase()+'/applications?user='+CANDIDATE_ID);
+      const list = await res.json();
+      const el = document.getElementById('applied-count');
+      if(el) el.textContent = list.length || '';
+    } catch{}
+  }
+
+  async function showApplied() {
+    const list = document.getElementById('jobs-list');
+    const header = document.querySelector('#jobs-card > div:first-child > div');
+    if(header) header.textContent = 'Applied Jobs';
+    list.innerHTML = '<div style="padding:8px 0;font-size:13px;color:var(--li-muted);"><span class="spin"></span> Loading applied jobs…</div>';
+    try {
+      const res = await fetch(getBase()+'/applications?user='+CANDIDATE_ID);
+      const apps = await res.json();
+      const STAGE_LABELS = {applied:'Applied',screening:'Screening',assessment:'Assessment',interview:'Interview',final_round:'Final Round',offer:'Offer Extended',hired:'Hired 🎉',rejected:'Not Progressed'};
+      const STAGE_COLORS = {applied:'var(--li-blue)',screening:'#8B5CF6',assessment:'#F59E0B',interview:'#0EA5E9',final_round:'#0EA5E9',offer:'#057642',hired:'#057642',rejected:'#c0392b'};
+      if(apps.length===0){ list.innerHTML='<div style="padding:8px;font-size:13px;color:var(--li-muted);">No applications yet.</div>'; return; }
+      list.innerHTML = apps.map(a=>`
+        <a href="/job/${a.job_id}" class="job-item" style="text-decoration:none;color:inherit;display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--li-border);">
+          <div class="job-logo">${a.logo||a.company.slice(0,2).toUpperCase()}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
+            <div style="font-size:12px;color:var(--li-muted);">${a.company} · ${a.work_type}</div>
+            <div style="margin-top:3px;">
+              <span style="background:${STAGE_COLORS[a.status]||'var(--li-blue)'};color:#fff;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:600;">${STAGE_LABELS[a.status]||a.status}</span>
+            </div>
+          </div>
+        </a>
+      `).join('');
+    } catch(e){ list.innerHTML='<div style="padding:8px;font-size:13px;color:#c0392b;">Could not load.</div>'; }
+  }
+
+  // ── RECRUITER SCORE ──
+  async function loadRecruiters(){
+    try{
+      const res=await fetch(getBase()+'/recruiters');
+      const list=await res.json();
+      const sel=document.getElementById('r-id');
+      list.forEach(r=>{
+        const opt=document.createElement('option');
+        opt.value=r.id; opt.textContent=r.name+' · '+r.company;
+        sel.appendChild(opt);
+      });
+    }catch(e){}
+  }
+
+  function openScoreModal(){
+    document.getElementById('modal-score').classList.add('open');
+    if(document.getElementById('r-id').options.length<=1) loadRecruiters();
+  }
+  function openJobFitModal(){
+    document.getElementById('modal-jobfit').classList.add('open');
+    loadProfileSkills().then(()=>{
+      if(currentFitJob) doJobFit();
+    });
+  }
   function closeModal(id){
     document.getElementById('modal-'+id).classList.remove('open');
     if(id==='score') document.getElementById('r-score-display').style.display='none';
     if(id==='jobfit'){ document.getElementById('jf-result').style.display='none'; document.getElementById('jf-btn').disabled=false; document.getElementById('jf-btn').textContent='Calculate Fit'; }
   }
-  function prefillScore(id){ document.getElementById('r-id').value=id; openScoreModal(); }
-  function prefillJobFit(reqs){ document.getElementById('jf-requirements').value=reqs; openJobFitModal(); }
+  function prefillScore(id){
+    openScoreModal();
+    // wait for options to load then select
+    const trySelect=()=>{
+      const sel=document.getElementById('r-id');
+      const opt=[...sel.options].find(o=>o.value===id);
+      if(opt){ sel.value=id; doScore(); }
+      else setTimeout(trySelect,100);
+    };
+    trySelect();
+  }
+  function prefillJobFit(jobId, reqs, title='', company='', location='', workType=''){
+    currentFitJob = jobId;
+    document.getElementById('jf-requirements').value=reqs||'';
+    document.getElementById('jf-context').style.display='block';
+    document.getElementById('jf-job-title').textContent=title||'Selected job';
+    document.getElementById('jf-job-subtitle').textContent=[company, location, workType].filter(Boolean).join(' · ');
+    openJobFitModal();
+  }
   function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500); }
 
   async function doScore(){
-    const id=document.getElementById('r-id').value.trim();
-    if(!id){ showToast('Enter a recruiter ID'); return; }
+    const id=document.getElementById('r-id').value;
+    if(!id){ showToast('Select a recruiter first'); return; }
     const btn=document.getElementById('r-btn'); btn.disabled=true; btn.textContent='Loading…';
     try{
       const res=await fetch(getBase()+'/recruiter_score/'+encodeURIComponent(id));
       const d=await res.json();
-      const score=parseFloat(d.score);
+      const score=d.score;
+
+      // header
+      const initials=(d.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('r-avatar').textContent=initials;
+      document.getElementById('r-name').textContent=d.name;
+      document.getElementById('r-company').textContent=d.company;
       document.getElementById('r-num').textContent=score.toFixed(1);
-      const tier=score>=85?'Top Performer ⭐ — Great choice!':score>=70?'Good Standing 👍 — Reliable recruiter.':'Needs Improvement ⚠️ — Proceed with caution.';
-      document.getElementById('r-tier').textContent=tier;
-      const pct=Math.min(Math.max(score,0),100);
-      document.getElementById('bl1').textContent=pct>75?'Fast':'Slow';
-      document.getElementById('bl2').textContent=Math.round(pct*0.6)+'%';
-      document.getElementById('bl3').textContent=(pct/20).toFixed(1)+' / 5';
-      document.getElementById('bl4').textContent=pct>75?'Low':'High';
+
+      // real metric bars
+      const rtPct=Math.max(0,100-((d.response_time/14)*100)); // faster = higher bar
+      const hirePct=Math.round(d.hire_rate*100);
+      const ratingPct=Math.round((d.rating/5)*100);
+      const cancelPct=Math.min(100,Math.round((d.cancellations/8)*100)); // more cancellations = taller red bar
+
+      document.getElementById('bl1').textContent=d.response_time+' day'+(d.response_time===1?'':'s');
+      document.getElementById('bl2').textContent=hirePct+'%';
+      document.getElementById('bl3').textContent=d.rating.toFixed(1)+' / 5.0';
+      document.getElementById('bl4').textContent=d.cancellations+(d.cancellations===1?' cancellation':' cancellations');
+
       setTimeout(()=>{
-        document.getElementById('bar1').style.width=Math.round(pct*0.90)+'%';
-        document.getElementById('bar2').style.width=Math.round(pct*0.60)+'%';
-        document.getElementById('bar3').style.width=Math.round(pct*0.82)+'%';
-        document.getElementById('bar4').style.width=Math.round(pct*0.70)+'%';
+        document.getElementById('bar1').style.width=rtPct+'%';
+        document.getElementById('bar2').style.width=hirePct+'%';
+        document.getElementById('bar3').style.width=ratingPct+'%';
+        document.getElementById('bar4').style.width=cancelPct+'%';
       },100);
-      const advice=score>=85?'This recruiter has an excellent track record. They respond quickly, have a high hire rate, and rarely cancel. You can feel confident applying through them.'
-        :score>=70?'This recruiter is generally reliable. Response times and hire rates are decent. A good option but you may want to follow up proactively.'
-        :'This recruiter has a below-average track record. Consider reaching out directly to the hiring manager, or look for other contacts at the company.';
+
+      const advice=score>=85?'Excellent track record — responds fast, high hire rate, rarely cancels. Apply with confidence.'
+        :score>=70?'Generally reliable. Decent response time and hire rate. Follow up proactively after applying.'
+        :'Below-average track record. Consider reaching out directly to the hiring manager or finding other contacts.';
       document.getElementById('r-advice').textContent=advice;
       document.getElementById('r-score-display').style.display='block';
       btn.disabled=false; btn.textContent='Refresh';
-    }catch(e){ showToast('Cannot reach Flask at '+getBase()); btn.disabled=false; btn.textContent='Get Score'; }
+    }catch(e){ showToast('Cannot reach server'); btn.disabled=false; btn.textContent='Get Score'; }
   }
 
   async function summarisePost(num,text){
@@ -531,48 +732,163 @@
     el.addEventListener('click',e=>{ if(e.target===el) el.classList.remove('open'); });
   });
 
-  // ── JOB FIT SCORE ──
+  // ── JOB FIT SCORE — tag chip input ──
+  let jfSkills = [];
+
+  function renderCandidatePreview(profile){
+    candidateProfile = profile || {};
+    const name = candidateProfile.name || 'Jamie Torres';
+    const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'JT';
+    document.getElementById('candidate-avatar').textContent = initials;
+    document.getElementById('candidate-name').textContent = name;
+    document.getElementById('candidate-headline').textContent = candidateProfile.headline || 'Build out your headline in your profile';
+    document.getElementById('candidate-location').textContent = candidateProfile.location || 'Add your location';
+
+    const experienceEntries = (() => {
+      try { return JSON.parse(candidateProfile.experience || '[]'); } catch { return []; }
+    })();
+    const oneLiner = candidateProfile.one_liner
+      || (experienceEntries[0] ? `${experienceEntries[0].title || 'Experience'} at ${experienceEntries[0].company || 'company'}` : '')
+      || candidateProfile.bio
+      || 'Add a one-line intro in your profile for a cleaner preview here.';
+    document.getElementById('candidate-bio').textContent = oneLiner;
+  }
+
+  async function loadProfileSkills(){
+    try {
+      const res = await fetch(`${getBase()}/profile/data?user=${CANDIDATE_ID}`);
+      const p = await res.json();
+      renderCandidatePreview(p);
+      if(p && p.skills){
+        jfSkills = p.skills.split(',').map(s=>s.trim()).filter(Boolean);
+      } else {
+        // fallback to localStorage for backward compat
+        jfSkills = JSON.parse(localStorage.getItem('jf_skills')||'[]');
+      }
+    } catch {
+      jfSkills = JSON.parse(localStorage.getItem('jf_skills')||'[]');
+    }
+    renderSkillTags();
+  }
+
+  function saveSkills(){
+    // persist locally; full profile save happens on /profile page
+    localStorage.setItem('jf_skills', JSON.stringify(jfSkills));
+  }
+
+  function renderSkillTags(){
+    const container=document.getElementById('jf-tag-input');
+    const input=document.getElementById('jf-skill-input');
+    container.querySelectorAll('.skill-chip').forEach(c=>c.remove());
+    jfSkills.forEach((skill,i)=>{
+      const chip=document.createElement('span');
+      chip.className='skill-chip';
+      chip.style.cssText='display:inline-flex;align-items:center;gap:4px;background:#EEF3F8;border:1px solid #c2d4e8;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#004182;';
+      chip.innerHTML=`${skill}<span onclick="removeSkill(${i})" style="cursor:pointer;color:#888;margin-left:2px;font-size:14px;line-height:1;">×</span>`;
+      container.insertBefore(chip, input);
+    });
+  }
+
+  function addSkill(val){
+    const skill=val.trim().replace(/,$/,'').trim();
+    if(skill.length<1) return;
+    const lower=skill.toLowerCase();
+    if(!jfSkills.map(s=>s.toLowerCase()).includes(lower)){
+      jfSkills.push(skill);
+      saveSkills();
+      renderSkillTags();
+    }
+  }
+
+  function removeSkill(i){
+    jfSkills.splice(i,1);
+    saveSkills();
+    renderSkillTags();
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    loadJobs();
+    updateSavedCount();
+    updateAppliedCount();
+    loadProfileSkills();
+    const input=document.getElementById('jf-skill-input');
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===','){
+        e.preventDefault();
+        addSkill(input.value);
+        input.value='';
+      } else if(e.key==='Backspace'&&input.value===''&&jfSkills.length>0){
+        jfSkills.pop(); saveSkills(); renderSkillTags();
+      }
+    });
+    input.addEventListener('blur',()=>{
+      if(input.value.trim()){ addSkill(input.value); input.value=''; }
+    });
+  });
+
   function doJobFit(){
-    const skills=document.getElementById('jf-skills').value.trim().toLowerCase();
-    const reqs=document.getElementById('jf-requirements').value.trim().toLowerCase();
-    if(!skills||!reqs){ showToast('Please fill in both fields'); return; }
+    const reqs=document.getElementById('jf-requirements').value.trim();
+    if(jfSkills.length===0){ showToast('Add at least one skill'); return; }
+    if(!reqs){ showToast('Paste the job requirements'); return; }
+    if(!currentFitJob){ showToast('Open job fit from a job card first'); return; }
     const btn=document.getElementById('jf-btn'); btn.disabled=true; btn.textContent='Calculating…';
+    fetch(getBase()+'/analyze-fit', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user: CANDIDATE_ID, job_id: currentFitJob, profile_overrides: {skills: jfSkills.join(',')}})
+    })
+      .then(async res => {
+        if(!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(result => {
+        document.getElementById('jf-num').textContent=result.score ?? '—';
+        document.getElementById('jf-tier').textContent =
+          (result.score ?? 0) >= 80 ? 'Strong Match 🎯 — Great fit!' :
+          (result.score ?? 0) >= 60 ? 'Good Match 👍 — Worth applying.' :
+          (result.score ?? 0) >= 40 ? 'Partial Match 🤔 — Some gaps.' :
+          'Low Match ⚠️ — Significant gaps.';
+        document.getElementById('jf-recommendation').textContent = 'Recommendation: ' + (result.recommendation || 'Review carefully');
+        document.getElementById('jf-advice').textContent =
+          (result.gaps && result.gaps.length)
+            ? 'Focus first on: ' + result.gaps.slice(0, 4).join(', ') + '.'
+            : 'Your profile is covering the major signals for this role.';
+        document.getElementById('jf-ai-text').textContent = result.analysis || 'No AI recommendation returned.';
 
-    // Tokenise both into keyword sets
-    const skillWords=new Set(skills.split(/[\s,;.+/|()]+/).filter(w=>w.length>2));
-    const reqWords=reqs.split(/[\s,;.+/|()]+/).filter(w=>w.length>2);
-    if(reqWords.length===0){ showToast('Requirements seem empty'); btn.disabled=false; btn.textContent='Calculate Fit'; return; }
+        const signalsEl = document.getElementById('jf-signals');
+        signalsEl.innerHTML = '';
+        (result.signals || []).forEach(signal => {
+          const row = document.createElement('div');
+          const color = signal.status === 'positive' ? '#057642' : signal.status === 'gap' ? '#b24020' : '#856404';
+          const bg = signal.status === 'positive' ? '#E8F5EE' : signal.status === 'gap' ? '#FFF4F2' : '#FFF8E1';
+          row.style.cssText = `background:${bg};border-radius:6px;padding:8px 10px;font-size:12px;line-height:1.5;`;
+          row.innerHTML = `<strong style="color:${color};">${signal.label}</strong><div style="color:#1d2226;margin-top:2px;">${signal.detail}</div>`;
+          signalsEl.appendChild(row);
+        });
 
-    // Score: % of requirement keywords matched
-    const matched=reqWords.filter(w=>skillWords.has(w)||[...skillWords].some(s=>s.includes(w)||w.includes(s)));
-    const matchPct=Math.min(100,Math.round((matched.length/reqWords.length)*100));
+        const matchedEl=document.getElementById('jf-matched');
+        matchedEl.innerHTML='';
+        (result.matched && result.matched.length ? result.matched : ['—']).forEach(w=>{
+          const c=document.createElement('span');
+          c.style.cssText='background:#e8f5e9;border:1px solid #a5d6a7;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#1b5e20;';
+          c.textContent=w; matchedEl.appendChild(c);
+        });
 
-    // Bonus for years-of-experience match
-    const reqYears=(reqs.match(/(\d+)\+?\s*year/)||[])[1]||0;
-    const myYears=(skills.match(/(\d+)\s*year/)||[])[1]||0;
-    let score=matchPct;
-    if(reqYears&&myYears) score=Math.min(100,score+(myYears>=reqYears?5:-5));
+        const missingEl=document.getElementById('jf-missing');
+        missingEl.innerHTML='';
+        ((result.gaps && result.gaps.length) ? result.gaps : ['No major gaps detected']).forEach(w=>{
+          const c=document.createElement('span');
+          c.style.cssText=(result.gaps && result.gaps.length)?'background:#fff3e0;border:1px solid #ffcc80;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#bf360c;':'background:#e8f5e9;border:1px solid #a5d6a7;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#1b5e20;';
+          c.textContent=w; missingEl.appendChild(c);
+        });
 
-    const tier=score>=80?'Strong Match 🎯 — You\'re a great fit!':score>=60?'Good Match 👍 — Worth applying.':score>=40?'Partial Match 🤔 — Some gaps exist.':'Low Match ⚠️ — Significant gaps.';
-    const advice=score>=80?'Your skills closely match what this role needs. You should apply with confidence.'
-      :score>=60?'You meet most of the requirements. Highlight your strongest matching skills in your application.'
-      :score>=40?'You meet some requirements but there are gaps. Consider building the missing skills or applying anyway with a strong cover letter.'
-      :'There are significant gaps between your skills and this role. Consider upskilling first or targeting a more junior role.';
-
-    // Breakdown bars
-    const matchedSet=matched.slice(0,6).join(', ')||'—';
-    const missingSet=reqWords.filter(w=>!matched.includes(w)).slice(0,4).join(', ')||'—';
-    document.getElementById('jf-num').textContent=score;
-    document.getElementById('jf-tier').textContent=tier;
-    document.getElementById('jf-bars').innerHTML=`
-      <div class="bar-row"><div class="bar-label"><span>Keyword Match</span><span>${matchPct}%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;transition:width 0.6s ease;" id="jfb1"></div></div></div>
-      <div class="bar-row"><div class="bar-label"><span>Skills matched</span><span style="font-size:11px;color:var(--li-muted);">${matchedSet}</span></div></div>
-      <div class="bar-row"><div class="bar-label"><span>Possible gaps</span><span style="font-size:11px;color:var(--li-muted);">${missingSet}</span></div></div>
-    `;
-    document.getElementById('jf-advice').textContent=advice;
-    document.getElementById('jf-result').style.display='block';
-    setTimeout(()=>{ document.getElementById('jfb1').style.width=matchPct+'%'; },100);
-    btn.disabled=false; btn.textContent='Recalculate';
+        document.getElementById('jf-result').style.display='block';
+        btn.disabled=false; btn.textContent='Recalculate';
+      })
+      .catch(() => {
+        showToast('Could not run AI fit analysis.');
+        btn.disabled=false; btn.textContent='Calculate Fit';
+      });
   }
 
   // ── FEED FILTER ──
