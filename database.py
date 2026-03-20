@@ -17,6 +17,7 @@ def init_db():
             recruiter TEXT NOT NULL,
             time TEXT NOT NULL,
             meeting_link TEXT NOT NULL,
+            job_id TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -26,12 +27,12 @@ def init_db():
 def save_interview(interview):
     conn = get_connection()
     conn.execute("""
-        INSERT INTO interviews (id, candidate, recruiter, time, meeting_link)
-        VALUES (:id, :candidate, :recruiter, :time, :meeting_link)
+        INSERT INTO interviews (id, candidate, recruiter, time, meeting_link, job_id)
+        VALUES (:id, :candidate, :recruiter, :time, :meeting_link, :job_id)
     """, interview)
     conn.commit()
     conn.close()
-
+    
 def get_all_interviews():
     conn = get_connection()
     rows = conn.execute("SELECT * FROM interviews ORDER BY created_at DESC").fetchall()
