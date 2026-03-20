@@ -233,6 +233,41 @@
     .posting-btn-pipeline:hover{background:#F8F4FF;}
     .posting-btn-toggle{color:var(--li-muted);border-color:var(--li-border);background:transparent;}
     .posting-btn-toggle:hover{background:var(--li-hover);color:var(--li-text);}
+    /* Decision buttons */
+    .decide-btn{padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid;transition:all 0.15s;}
+    .decide-advance{color:#057642;border-color:#057642;background:#E8F5EE;}
+    .decide-advance:hover{background:#057642;color:#fff;}
+    .decide-advance.decided{background:#057642;color:#fff;}
+    .decide-more{color:#0A66C2;border-color:#0A66C2;background:#EEF3F8;}
+    .decide-more:hover{background:#0A66C2;color:#fff;}
+    .decide-more.decided{background:#0A66C2;color:#fff;}
+    .decide-reject{color:#c0392b;border-color:#c0392b;background:#FCE8E6;}
+    .decide-reject:hover{background:#c0392b;color:#fff;}
+    .decide-reject.decided{background:#c0392b;color:#fff;}
+    /* Stage track */
+    .stage-track{display:flex;align-items:flex-start;gap:0;padding:12px 16px 10px;overflow-x:auto;border-bottom:1px solid var(--li-border);background:#FAFAF8;}
+    .stage-track-step{display:flex;align-items:flex-start;flex-shrink:0;}
+    .stage-track-node{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:56px;max-width:72px;}
+    .stage-track-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;border:2px solid;}
+    .stage-track-label{font-size:9px;font-weight:700;text-align:center;line-height:1.3;}
+    .stage-track-sub{font-size:8px;text-align:center;opacity:0.85;line-height:1.3;}
+    .stage-track-line{width:18px;height:2px;flex-shrink:0;margin-top:12px;}
+    /* Pipeline accordion cards */
+    .app-card{border:1px solid var(--li-border);border-radius:10px;overflow:hidden;margin-bottom:8px;background:#fff;transition:box-shadow 0.15s;}
+    .app-card:hover{box-shadow:0 2px 10px rgba(0,0,0,0.07);}
+    .app-header{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;user-select:none;}
+    .app-header:hover{background:#FAFAF8;}
+    .app-body{border-top:1px solid var(--li-border);}
+    .app-section{padding:12px 16px;border-bottom:1px solid var(--li-border);}
+    .app-section:last-child{border-bottom:none;}
+    .app-expand{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#F3F2EF;color:var(--li-muted);font-size:11px;flex-shrink:0;transition:transform 0.2s;}
+    /* Collapsed round rows */
+    .round-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--li-border);border-radius:8px;cursor:pointer;background:#fff;margin-bottom:0;transition:background 0.1s;}
+    .round-row:hover{background:#FAFAF8;}
+    .round-row+.round-row-body,.round-row+.round-row-body+.round-row{margin-top:0;}
+    .round-row-body{border:1px solid var(--li-border);border-top:none;border-radius:0 0 8px 8px;padding:12px;background:#fff;margin-bottom:6px;}
+    .round-item{margin-bottom:6px;}
+    .round-item:last-child{margin-bottom:0;}
   </style>
 </head>
 <body>
@@ -346,7 +381,7 @@
             <button onclick="openPostJobModal()" style="background:#057642;color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+ Post a Job</button>
           </div>
         </div>
-        <div id="postings-body">
+        <div id="postings-body" style="overflow-y:auto;max-height:calc(100vh - 210px);">
           <div class="loading-state"><span class="spin"></span> Loading...</div>
         </div>
       </div>
@@ -370,7 +405,7 @@
         </div>
         <div id="pipeline-title" style="display:none;"></div>
         <div id="pipeline-subtitle" style="display:none;"></div>
-        <div id="pipeline-body" style="padding:8px 16px 20px;background:#fff;">
+        <div id="pipeline-body" style="padding:8px 16px 20px;background:#fff;overflow-y:auto;max-height:calc(100vh - 270px);">
           <div style="padding:28px 12px;text-align:center;color:var(--li-muted);font-size:13px;">Select a job opening above to load its candidate pipeline.</div>
         </div>
       </div>
@@ -381,12 +416,12 @@
   <!-- RIGHT -->
   <div class="sidebar-right">
     <div class="news-card" style="background:#F8F4FF;border-color:#E1D5F9;">
-      <div class="news-title" style="color:#8B5CF6;">Pipeline Guide</div>
-      <div class="news-item"><div class="news-headline">1. Open a job's Pipeline</div><div class="news-meta">Click "Pipeline" on any job posting to load its candidates</div></div>
+      <div class="news-title" style="color:#8B5CF6;">Round Flow</div>
+      <div class="news-item"><div class="news-headline">1. Add a round</div><div class="news-meta">Screening call → technical → manager → final panel</div></div>
       <div style="border-top:1px solid var(--li-border);margin:6px 0;"></div>
-      <div class="news-item"><div class="news-headline">2. Add interview rounds</div><div class="news-meta">Screening call → technical → manager → final panel</div></div>
+      <div class="news-item"><div class="news-headline">2. Generate AI Pack + Schedule</div><div class="news-meta">One click creates interviewer brief, candidate questions, and a Meet link</div></div>
       <div style="border-top:1px solid var(--li-border);margin:6px 0;"></div>
-      <div class="news-item"><div class="news-headline">3. Generate AI pack</div><div class="news-meta">One-click: brief + questions for each round</div></div>
+      <div class="news-item"><div class="news-headline">3. Set Decision after the interview</div><div class="news-meta"><span style="color:#057642;font-weight:600;">Advance</span> → next stage + add next round<br><span style="color:#0A66C2;font-weight:600;">More round</span> → another round same stage<br><span style="color:#c0392b;font-weight:600;">Reject</span> → closes application</div></div>
     </div>
     <div class="news-card">
       <div class="news-title">Hiring Trends</div>
@@ -1057,6 +1092,35 @@
   let allApplicants = [];
   let roundsByApplication = {};
   let pipelineCurrentStage = 'all';
+  let expandedCards = new Set();
+  let expandedRounds = new Set();
+
+  function toggleCard(appId) {
+    const body = document.getElementById('app-body-'+appId);
+    const icon = document.getElementById('app-icon-'+appId);
+    if (!body) return;
+    if (expandedCards.has(appId)) {
+      expandedCards.delete(appId);
+      body.style.display = 'none';
+      if (icon) icon.textContent = '▼';
+    } else {
+      expandedCards.add(appId);
+      body.style.display = '';
+      if (icon) icon.textContent = '▲';
+    }
+  }
+
+  function toggleRound(roundId) {
+    const body = document.getElementById('round-body-'+roundId);
+    if (!body) return;
+    if (expandedRounds.has(roundId)) {
+      expandedRounds.delete(roundId);
+      body.style.display = 'none';
+    } else {
+      expandedRounds.add(roundId);
+      body.style.display = '';
+    }
+  }
 
   const STAGE_LABELS = {applied:'Applied',screening:'Screening',assessment:'Assessment',interview:'Interview',final_round:'Final Round',offer:'Offer Extended',hired:'Hired 🎉',rejected:'Not Progressed'};
   const STAGE_COLORS = {applied:'#0A66C2',screening:'#8B5CF6',assessment:'#F59E0B',interview:'#0EA5E9',final_round:'#0EA5E9',offer:'#057642',hired:'#057642',rejected:'#c0392b'};
@@ -1204,6 +1268,57 @@
     }
   }
 
+  async function decideRound(applicationId, roundId, decision) {
+    const payload = {
+      round_type: document.getElementById(`round-type-${roundId}`).value,
+      interviewer_name: document.getElementById(`round-interviewer-${roundId}`).value.trim(),
+      scheduled_time: document.getElementById(`round-time-${roundId}`).value || null,
+      decision,
+      notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
+      feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
+    };
+    try {
+      const res = await fetch(getBase()+`/interview-rounds/${roundId}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error();
+      await loadApplicants();
+      showToast(decision === 'advance' ? '✓ Advanced to next stage' : decision === 'reject' ? '✕ Application closed' : '↩ Another round added to queue');
+    } catch(e) { showToast('Could not save decision.'); }
+  }
+
+  function renderStageTrack(application) {
+    const rounds = roundsByApplication[application.id] || [];
+    const status = application.status;
+    const DOT_COLORS = { done:'#057642', active:'#0A66C2', pending:'#ccc', rejected:'#c0392b', more:'#F59E0B' };
+    const ROUND_SHORT = { screening_call:'Screening', technical_round:'Technical', manager_round:'Manager', final_panel:'Final Panel', culture_round:'Culture', hr_round:'HR' };
+
+    const steps = [{ label:'Applied', st:'done', sub:'' }];
+    rounds.forEach(r => {
+      const st = r.decision === 'advance' ? 'done' : r.decision === 'reject' ? 'rejected' : r.decision === 'more_round_required' ? 'more' : 'active';
+      const sub = r.decision ? (r.decision === 'advance' ? 'Advance ✓' : r.decision === 'reject' ? 'Rejected' : 'More round') : 'Pending';
+      steps.push({ label: ROUND_SHORT[r.round_type] || r.round_type, st, sub });
+    });
+    if (status === 'offer' || status === 'hired') steps.push({ label:'Offer', st:'done', sub:'' });
+    else if (status !== 'rejected') steps.push({ label:'Offer', st:'pending', sub:'' });
+    if (status === 'hired') steps.push({ label:'Hired 🎉', st:'done', sub:'' });
+    else if (status === 'rejected') steps.push({ label:'Rejected', st:'rejected', sub:'' });
+    else steps.push({ label:'Hired', st:'pending', sub:'' });
+
+    return `<div class="stage-track">${steps.map((s, i) => `
+      <div class="stage-track-step">
+        <div class="stage-track-node">
+          <div class="stage-track-dot" style="background:${DOT_COLORS[s.st]};border-color:${DOT_COLORS[s.st]};color:${s.st==='pending'?'#aaa':'#fff'};">
+            ${s.st==='done'?'✓':s.st==='rejected'?'✕':(i+1)}
+          </div>
+          <div class="stage-track-label" style="color:${DOT_COLORS[s.st]};">${s.label}</div>
+          ${s.sub ? `<div class="stage-track-sub" style="color:${DOT_COLORS[s.st]};">${s.sub}</div>` : ''}
+        </div>
+        ${i < steps.length - 1 ? `<div class="stage-track-line" style="background:${s.st==='done'?'#057642':'#E0DFDC'};"></div>` : ''}
+      </div>`).join('')}
+    </div>`;
+  }
+
   function renderDecisionPill(decision) {
     if (!decision) return '';
     return `<span class="decision-pill" style="${DECISION_STYLES[decision] || 'background:#EEF3F8;color:#0A66C2;'}">${DECISION_LABELS[decision] || decision}</span>`;
@@ -1216,13 +1331,17 @@
     const gaps = Array.isArray(pack.gaps_to_probe) ? pack.gaps_to_probe : [];
     return `
       <div class="round-ai-box">
-        <div class="round-ai-title">Interviewer Brief Pack</div>
+        <div class="round-ai-title">✦ AI Interview Brief</div>
+        ${pack.screening_bullets ? `
+        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:9px 12px;margin-bottom:10px;">
+          <div style="font-size:10px;font-weight:800;color:#057642;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Screening Note</div>
+          <div style="font-size:12px;color:var(--li-text);line-height:1.6;">${formatRichText(pack.screening_bullets)}</div>
+        </div>` : ''}
         <div class="round-ai-copy"><strong>Candidate summary:</strong> ${formatRichText(pack.candidate_summary || 'Not available')}</div>
-        <div class="round-ai-copy" style="margin-top:6px;"><strong>Shared recruiter notes:</strong> ${formatRichText(pack.recruiter_notes || 'None recorded yet')}</div>
         <div class="round-ai-copy" style="margin-top:6px;"><strong>Round objective:</strong> ${formatRichText(pack.round_objective || 'Not set')}</div>
-        ${highlights.length ? `<div class="round-list">${highlights.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+        ${highlights.length ? `<div class="round-list" style="margin-top:6px;">${highlights.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
         ${gaps.length ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Gaps to probe:</strong></div><div class="round-list">${gaps.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
-        ${pack.interviewer_guidance ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>AI guidance:</strong><br>${formatRichText(pack.interviewer_guidance)}</div>` : ''}
+        ${pack.interviewer_guidance ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Round briefing:</strong><br>${formatRichText(pack.interviewer_guidance)}</div>` : ''}
       </div>
     `;
   }
@@ -1268,88 +1387,89 @@
 
   function renderRounds(application) {
     const rounds = roundsByApplication[application.id] || [];
-    const carryForward = application.recruiter_notes || application.screening_note;
-    const carryForwardBox = carryForward
-      ? `<div class="round-ai-box" style="margin-bottom:10px;background:#EEF3F8;border-color:#C5D9EF;">
-          <div class="round-ai-title" style="color:#0A66C2;">Carry-Forward Handoff Notes</div>
-          <div class="round-ai-copy">${formatRichText(carryForward)}</div>
-        </div>`
-      : '';
-    if (!rounds.length) {
-      return `
-        <div class="timeline-shell">
-          <div class="timeline-top">
-            <div class="timeline-title">Interview Timeline</div>
-            <button class="timeline-btn" onclick='addRound(${JSON.stringify(application.id)})'>+ Add round</button>
-          </div>
-          ${carryForwardBox}
-          <div class="timeline-empty">No interview rounds yet. Add a screening call, technical round, manager round, or final panel to start the handoff timeline.</div>
-        </div>
-      `;
-    }
+
     return `
-      <div class="timeline-shell">
-        <div class="timeline-top">
-          <div class="timeline-title">Interview Timeline</div>
+      <div class="app-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${rounds.length ? '10px' : '4px'};">
+          <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;">
+            Interview Timeline
+            ${rounds.length ? `<span style="font-weight:400;color:var(--li-muted);"> · ${rounds.length} round${rounds.length!==1?'s':''}</span>` : ''}
+          </div>
           <button class="timeline-btn" onclick='addRound(${JSON.stringify(application.id)})'>+ Add round</button>
         </div>
-        ${carryForwardBox}
-        ${rounds.map(round => {
-          const roundTypeOptions = Object.keys(ROUND_TYPE_LABELS).map(type =>
-            `<option value="${type}" ${type===round.round_type?'selected':''}>${formatRoundType(type)}</option>`
-          ).join('');
-          const decisionOptions = Object.keys(DECISION_LABELS).map(value =>
-            `<option value="${value}" ${value===((round.decision)||'')?'selected':''}>${DECISION_LABELS[value]}</option>`
-          ).join('');
-          return `
-            <div class="round-card">
-              <div class="round-dot">${round.round_number || '?'}</div>
-              <div class="round-panel">
-                <div class="round-panel-top">
-                  <div>
-                    <div class="round-name">Round ${round.round_number || '?'} · ${escapeHtml(formatRoundType(round.round_type))}</div>
-                    <div class="round-sub">${escapeHtml(round.objective || 'Objective will help the interviewer focus on what to validate in this round.')}</div>
+        ${rounds.length === 0
+          ? `<div class="timeline-empty">No rounds yet — click "+ Add round" to begin the interview process.</div>`
+          : rounds.map(round => {
+              const roundTypeOptions = Object.keys(ROUND_TYPE_LABELS).map(type =>
+                `<option value="${type}" ${type===round.round_type?'selected':''}>${formatRoundType(type)}</option>`
+              ).join('');
+              const decisionOptions = Object.keys(DECISION_LABELS).map(value =>
+                `<option value="${value}" ${value===((round.decision)||'')?'selected':''}>${DECISION_LABELS[value]}</option>`
+              ).join('');
+              const scheduledLabel = round.scheduled_time
+                ? new Date(round.scheduled_time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+                : 'Not scheduled';
+
+              return `
+                <div class="round-item">
+                  <!-- Round collapsed row -->
+                  <div class="round-row" onclick="toggleRound('${round.id}')">
+                    <div style="width:22px;height:22px;border-radius:50%;background:#8B5CF6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">${round.round_number || '?'}</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-weight:600;font-size:13px;">${escapeHtml(formatRoundType(round.round_type))}</div>
+                      <div style="font-size:11px;color:var(--li-muted);">${round.interviewer_name ? escapeHtml(round.interviewer_name) : 'No interviewer'} · ${scheduledLabel}</div>
+                    </div>
+                    ${renderDecisionPill(round.decision)}
+                    ${round.meeting_link ? `<a href="${escapeHtml(round.meeting_link)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#0A66C2;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join ↗</a>` : ''}
+                    <span style="color:var(--li-muted);font-size:12px;flex-shrink:0;">▾</span>
                   </div>
-                  <div>${renderDecisionPill(round.decision)}</div>
+                  <!-- Round expanded detail -->
+                  <div id="round-body-${round.id}" class="round-row-body" style="display:none;">
+                    <div class="round-grid" style="margin-bottom:10px;">
+                      <div class="round-field">
+                        <label>Round Type</label>
+                        <select id="round-type-${round.id}">${roundTypeOptions}</select>
+                      </div>
+                      <div class="round-field">
+                        <label>Interviewer Name</label>
+                        <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds"/>
+                      </div>
+                      <div class="round-field">
+                        <label>Scheduled Time</label>
+                        <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}"/>
+                      </div>
+                      <!-- hidden decision field — driven by buttons below -->
+                      <div style="display:none;"><select id="round-decision-${round.id}">${decisionOptions}</select></div>
+                      <div class="round-field">
+                        <label>Pre-round Notes</label>
+                        <textarea id="round-notes-${round.id}" placeholder="Context for the interviewer going in">${escapeHtml(round.notes || '')}</textarea>
+                      </div>
+                      <div class="round-field">
+                        <label>Post-round Feedback</label>
+                        <textarea id="round-feedback-${round.id}" placeholder="Feedback after the interview">${escapeHtml(round.feedback || '')}</textarea>
+                      </div>
+                    </div>
+                    <div class="round-actions">
+                      <button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save details</button>
+                      <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✦ AI Pack</button>
+                      <button class="round-btn primary" onclick='scheduleFromRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(application.candidate_name || application.user_identifier)}, ${JSON.stringify(application.job_id)})'>Schedule</button>
+                    </div>
+                    <!-- Decision action buttons -->
+                    <div style="border-top:1px solid var(--li-border);padding-top:12px;margin-top:4px;">
+                      <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Round Outcome — saves all fields above</div>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="decide-btn decide-advance ${round.decision==='advance'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "advance")'>✓ Advance to next stage</button>
+                        <button class="decide-btn decide-more ${round.decision==='more_round_required'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "more_round_required")'>↩ Another round needed</button>
+                        <button class="decide-btn decide-reject ${round.decision==='reject'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "reject")'>✕ Not proceeding</button>
+                      </div>
+                    </div>
+                    ${renderBriefPack(round.brief_pack)}
+                    ${renderQuestionPack(round.question_pack)}
+                  </div>
                 </div>
-                <div class="round-grid">
-                  <div class="round-field">
-                    <label>Round Type</label>
-                    <select id="round-type-${round.id}">${roundTypeOptions}</select>
-                  </div>
-                  <div class="round-field">
-                    <label>Interviewer Name</label>
-                    <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds" />
-                  </div>
-                  <div class="round-field">
-                    <label>Scheduled Time</label>
-                    <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}" />
-                  </div>
-                  <div class="round-field">
-                    <label>Decision</label>
-                    <select id="round-decision-${round.id}">${decisionOptions}</select>
-                  </div>
-                  <div class="round-field">
-                    <label>Round Notes</label>
-                    <textarea id="round-notes-${round.id}" placeholder="What should the interviewer know going into this round?">${escapeHtml(round.notes || '')}</textarea>
-                  </div>
-                  <div class="round-field">
-                    <label>Feedback / Outcome</label>
-                    <textarea id="round-feedback-${round.id}" placeholder="Capture feedback for the next interviewer or hiring manager.">${escapeHtml(round.feedback || '')}</textarea>
-                  </div>
-                </div>
-                <div class="round-actions">
-                  <button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save round</button>
-                  <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Generate AI Interview Pack</button>
-                  <button class="round-btn primary" onclick='scheduleFromRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(application.candidate_name || application.user_identifier)}, ${JSON.stringify(application.job_id)})'>Schedule</button>
-                  ${round.meeting_link ? `<a class="round-link" href="${escapeHtml(round.meeting_link)}" target="_blank">Open meeting ↗</a>` : ''}
-                </div>
-                ${renderBriefPack(round.brief_pack)}
-                ${renderQuestionPack(round.question_pack)}
-              </div>
-            </div>
-          `;
-        }).join('')}
+              `;
+            }).join('')
+        }
       </div>
     `;
   }
@@ -1362,54 +1482,84 @@
       if (pipelineCurrentStage === 'closed') return ['offer', 'hired', 'rejected'].includes(a.status);
       return true;
     });
-    if(list.length === 0) {
-      body.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:var(--li-muted);">No candidates in this stage.</div>';
+    if (list.length === 0) {
+      body.innerHTML = '<div style="padding:28px;text-align:center;font-size:13px;color:var(--li-muted);">No candidates in this stage.</div>';
       return;
     }
 
     body.innerHTML = list.map((a, index) => {
       const name = a.candidate_name || a.user_identifier;
-      const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '?';
-      const skills = a.candidate_skills
-        ? a.candidate_skills.split(',').slice(0,5).map(s=>`<span style="background:#EEF3F8;border-radius:10px;padding:2px 7px;font-size:11px;">${s.trim()}</span>`).join('')
-        : '<span style="color:var(--li-muted);font-size:11px;">No skills on profile</span>';
-      const appliedDate = new Date(a.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      const bg = avatarColor(name);
+      const ini = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || '?';
+      const appliedDate = new Date(a.applied_at).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
       const expSummary = summarizeExperience(a.candidate_experience);
+      const rounds = roundsByApplication[a.id] || [];
+      const skills = a.candidate_skills
+        ? a.candidate_skills.split(',').slice(0,6).map(s=>`<span style="background:#EEF3F8;border-radius:12px;padding:3px 9px;font-size:11px;color:#0A66C2;font-weight:600;">${escapeHtml(s.trim())}</span>`).join('')
+        : '<span style="color:var(--li-muted);font-size:12px;">No skills on profile</span>';
+      const stageOptions = Object.keys(STAGE_LABELS).map(s =>
+        `<option value="${s}" ${s===a.status?'selected':''}>${STAGE_LABELS[s]}</option>`
+      ).join('');
+      const stageColor = STAGE_COLORS[a.status] || '#666';
+
       return `
-        <div class="applicant-card" id="app-${a.id}">
-          <div class="applicant-header">
-            <div class="applicant-avatar">${initials}</div>
+        <div class="app-card" id="app-${a.id}">
+          <!-- COLLAPSED HEADER — always visible -->
+          <div class="app-header" onclick="toggleCard('${a.id}')">
+            <div style="width:40px;height:40px;border-radius:50%;background:${bg};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">${ini}</div>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <div style="font-weight:700;font-size:14px;">#${index + 1} ${name}</div>
-                ${a.ai_score ? `<span class="fit-badge" style="background:#E8F0FE;color:var(--li-blue);">Fit: ${a.ai_score.toFixed(0)}%</span>` : ''}
+                <span style="font-weight:700;font-size:14px;">${escapeHtml(name)}</span>
+                ${a.ai_score ? `<span style="background:#E8F0FE;color:#0A66C2;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;">Fit ${a.ai_score.toFixed(0)}%</span>` : ''}
               </div>
-              <div style="font-size:12px;color:var(--li-muted);margin-top:2px;">${a.headline || 'No headline yet'}</div>
-              <div style="font-size:11px;color:var(--li-muted);margin-top:2px;">${a.candidate_location || 'Location not specified'}${expSummary ? ' · ' + expSummary : ''}</div>
+              <div style="font-size:12px;color:var(--li-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(a.headline || 'No headline')}${expSummary ? ' · ' + escapeHtml(expSummary) : ''}</div>
+              <div style="font-size:11px;color:var(--li-muted);margin-top:1px;">${escapeHtml(a.candidate_location || 'Location N/A')} · Applied ${appliedDate} · ${rounds.length} round${rounds.length!==1?'s':''}</div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-              <span style="background:${STAGE_COLORS[a.status]};color:#fff;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;">${STAGE_LABELS[a.status] || a.status}</span>
-              <div style="font-size:10px;color:var(--li-muted);">Applied ${appliedDate}</div>
+            <!-- Stage selector — works without expanding card -->
+            <div onclick="event.stopPropagation()" style="flex-shrink:0;">
+              <select style="font-size:11px;font-weight:700;padding:4px 8px;border-radius:20px;cursor:pointer;border:1.5px solid ${stageColor}40;background:${stageColor}18;color:${stageColor};font-family:inherit;outline:none;" onchange="updateStage('${a.id}', this.value)">
+                ${stageOptions}
+              </select>
             </div>
+            <div class="app-expand" id="app-icon-${a.id}">▼</div>
           </div>
-          ${a.cover_note ? `<div style="background:#F3F2EF;border-radius:4px;padding:8px 10px;font-size:12px;margin-bottom:8px;font-style:italic;">"${a.cover_note}"</div>` : ''}
-          ${renderProgressBar(a)}
-          ${renderCandidateDossier(a)}
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${skills}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <button onclick='addRound(${JSON.stringify(a.id)})' style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid #057642;background:#E8F5EE;color:#057642;cursor:pointer;font-family:inherit;">Add interview round</button>
-          </div>
-          <div style="margin-top:8px;">
-            <label style="display:block;font-size:11px;font-weight:700;color:var(--li-muted);margin-bottom:5px;">Recruiter notes</label>
-            <textarea id="notes-${a.id}" style="width:100%;min-height:64px;border:1px solid var(--li-border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;" placeholder="Add notes for screening, feedback, or next steps...">${a.recruiter_notes || ''}</textarea>
-            <div style="display:flex;justify-content:flex-end;margin-top:6px;">
-              <button onclick="saveRecruiterNotes('${a.id}')" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid var(--li-border);background:#fff;cursor:pointer;font-family:inherit;">Save notes</button>
+
+          <!-- EXPANDED BODY — hidden by default -->
+          <div class="app-body" id="app-body-${a.id}" style="display:none;">
+            ${renderStageTrack(a)}
+            ${a.cover_note ? `
+              <div class="app-section" style="background:#FAFAF8;">
+                <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Cover note</div>
+                <div style="font-size:13px;font-style:italic;color:var(--li-text);">"${escapeHtml(a.cover_note)}"</div>
+              </div>` : ''}
+            <div class="app-section">
+              <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Skills</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">${skills}</div>
             </div>
+            <div class="app-section">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;">Recruiter Notes</div>
+                <button onclick="saveRecruiterNotes('${a.id}')" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid var(--li-border);background:#fff;cursor:pointer;font-family:inherit;">Save</button>
+              </div>
+              <textarea id="notes-${a.id}" style="width:100%;min-height:60px;border:1px solid var(--li-border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;" placeholder="Notes for screening, feedback, or next steps...">${escapeHtml(a.recruiter_notes || '')}</textarea>
+            </div>
+            ${renderRounds(a)}
           </div>
-          ${renderRounds(a)}
         </div>
       `;
     }).join('');
+
+    // Restore previously expanded cards and rounds
+    expandedCards.forEach(appId => {
+      const b = document.getElementById('app-body-'+appId);
+      const i = document.getElementById('app-icon-'+appId);
+      if (b) b.style.display = '';
+      if (i) i.textContent = '▲';
+    });
+    expandedRounds.forEach(roundId => {
+      const b = document.getElementById('round-body-'+roundId);
+      if (b) b.style.display = '';
+    });
   }
 
   async function updateStage(appId, newStatus) {
@@ -1464,11 +1614,12 @@
   }
 
   async function saveRound(applicationId, roundId) {
+    const decisionEl = document.getElementById(`round-decision-${roundId}`);
     const payload = {
       round_type: document.getElementById(`round-type-${roundId}`).value,
       interviewer_name: document.getElementById(`round-interviewer-${roundId}`).value.trim(),
       scheduled_time: document.getElementById(`round-time-${roundId}`).value || null,
-      decision: document.getElementById(`round-decision-${roundId}`).value || null,
+      decision: decisionEl ? (decisionEl.value || null) : null,
       notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
       feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
     };

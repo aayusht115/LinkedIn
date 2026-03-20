@@ -364,11 +364,7 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
     breakdown = calculate_fit_breakdown(profile, job)
     objective = round_info.get("objective") or round_objective_for(round_info.get("round_type"))
     candidate_summary = _candidate_summary(profile)
-    recruiter_notes = (
-        (application or {}).get("recruiter_notes")
-        or (application or {}).get("screening_note")
-        or "No recruiter notes recorded yet."
-    )
+    recruiter_notes = (application or {}).get("recruiter_notes") or "No recruiter notes recorded yet."
     resume_highlights = _resume_highlights(profile)
     gaps_to_probe = breakdown["gaps"][:5] or [
         signal["label"].lower()
@@ -377,36 +373,50 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
     ][:5]
 
     prompt = (
-        f"<|im_start|>system\nYou create interviewer brief packs. Be concise, practical, and specific.\n<|im_end|>\n"
+        f"<|im_start|>system\nYou create concise recruiter brief packs. Be practical and specific.\n<|im_end|>\n"
         f"<|im_start|>user\n"
-        f"Round: {round_info.get('round_number', '?')} / {round_info.get('round_type', 'general')}\n"
-        f"Round objective: {objective}\n"
-        f"Candidate summary: {candidate_summary}\n"
-        f"Resume highlights: {'; '.join(resume_highlights) or 'not provided'}\n"
-        f"Recruiter notes: {recruiter_notes}\n"
+        f"Candidate: {candidate_summary}\n"
+        f"Resume: {'; '.join(resume_highlights) or 'not provided'}\n"
         f"Cover note: {(application or {}).get('cover_note') or 'none'}\n"
         f"Job: {job.get('title', '')} at {job.get('company', '')}\n"
-        f"Job requirements: {job.get('requirements', '') or job.get('qualifications', '')}\n"
-        f"Fit score: {breakdown['score']} | matched={', '.join(breakdown['matched']) or 'none'} | gaps={', '.join(gaps_to_probe) or 'none'}\n"
-        f"Write a 5-sentence interviewer briefing covering what is promising, what to validate, what to probe, and what a strong signal would look like in this round.\n"
+        f"Requirements: {job.get('requirements', '') or job.get('qualifications', '')}\n"
+        f"Fit score: {breakdown['score']} | matched: {', '.join(breakdown['matched']) or 'none'} | gaps: {', '.join(gaps_to_probe) or 'none'}\n"
+        f"Round {round_info.get('round_number', '?')}: {round_info.get('round_type', 'general')} — {objective}\n\n"
+        f"Write:\n"
+        f"SCREENING NOTE:\n"
+        f"- Strengths: one sentence\n"
+        f"- Concerns: one sentence\n"
+        f"- Recommendation: one sentence\n\n"
+        f"ROUND BRIEFING: 5 sentences covering what is promising, what to validate, what to probe, and what a strong signal looks like in this round.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
 
     inputs = _tokenizer(prompt, return_tensors="pt")
     with torch.no_grad():
         output = _model.generate(
-            **inputs, max_new_tokens=220, do_sample=False,
+            **inputs, max_new_tokens=300, do_sample=False,
             pad_token_id=_tokenizer.eos_token_id
         )
-    briefing = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+    full_text = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+
+    screening_text = ""
+    briefing_text = full_text
+    if "ROUND BRIEFING:" in full_text:
+        parts = full_text.split("ROUND BRIEFING:", 1)
+        screening_text = parts[0].replace("SCREENING NOTE:", "").strip()
+        briefing_text = parts[1].strip()
+    elif "SCREENING NOTE:" in full_text:
+        screening_text = full_text.replace("SCREENING NOTE:", "").strip()
+        briefing_text = ""
 
     return {
         "candidate_summary": candidate_summary,
+        "screening_bullets": screening_text,
         "recruiter_notes": recruiter_notes,
         "resume_highlights": resume_highlights,
         "gaps_to_probe": gaps_to_probe,
         "round_objective": objective,
-        "interviewer_guidance": briefing,
+        "interviewer_guidance": briefing_text,
     }
 
 def generate_candidate_interview_questions(profile, job, application=None, round_info=None):
