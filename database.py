@@ -3,7 +3,7 @@ import sqlite3
 import os
 import uuid
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "interviews.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "interviews.db"))
 
 # ── Seed data (no CSVs) ───────────────────────────────────────────────────────
 

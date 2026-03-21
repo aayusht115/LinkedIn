@@ -411,6 +411,192 @@
         </div>
       </div>
 
+      <!-- FEED PANE -->
+      <div id="pane-feed" style="display:none;padding:12px 16px 20px;overflow-y:auto;max-height:calc(100vh - 200px);">
+
+        <!-- Post composer -->
+        <div class="post-composer">
+          <div class="composer-row">
+            <div class="composer-avatar">SR</div>
+            <input class="composer-input" type="text" placeholder="Share a hiring insight or update..." />
+          </div>
+          <div class="composer-actions">
+            <button class="composer-btn">📷 Media</button>
+            <button class="composer-btn">📅 Event</button>
+            <button class="composer-btn">✏️ Article</button>
+          </div>
+        </div>
+
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+          <div class="filter-top">
+            <div class="filter-search">
+              <svg width="14" height="14" fill="none" stroke="#999" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input type="text" id="feed-filter-keyword" placeholder="Filter by keyword, name, company..." oninput="applyFeedFilters()" />
+            </div>
+            <button class="filter-clear" onclick="clearFeedFilters()">✕ Clear</button>
+          </div>
+          <div class="filter-chips">
+            <span class="filter-label">Topic:</span>
+            <span class="chip active" data-filter="ftopic" data-value="all" onclick="toggleFeedChip(this,'ftopic')">All</span>
+            <span class="chip" data-filter="ftopic" data-value="hiring" onclick="toggleFeedChip(this,'ftopic')">Hiring</span>
+            <span class="chip" data-filter="ftopic" data-value="engineering" onclick="toggleFeedChip(this,'ftopic')">Engineering</span>
+            <span class="chip" data-filter="ftopic" data-value="ai" onclick="toggleFeedChip(this,'ftopic')">AI / ML</span>
+            <span class="chip" data-filter="ftopic" data-value="career" onclick="toggleFeedChip(this,'ftopic')">Career</span>
+            <div class="filter-divider"></div>
+            <span class="filter-label">Sort:</span>
+            <span class="chip active" data-filter="fsort" data-value="recent" onclick="toggleFeedChip(this,'fsort')">Recent</span>
+            <span class="chip" data-filter="fsort" data-value="top" onclick="toggleFeedChip(this,'fsort')">Top</span>
+          </div>
+          <div class="filter-results" id="feed-filter-results"></div>
+        </div>
+        <div class="no-results" id="feed-no-results" style="display:none;">No posts match your filters. <span style="cursor:pointer;color:var(--li-blue);font-weight:600;" onclick="clearFeedFilters()">Clear filters</span></div>
+
+        <!-- POST 1 -->
+        <div class="post-card" id="fpost-1" data-topics="career engineering" data-author="Priya Rajan" data-company="Stripe" data-reactions="847">
+          <div class="post-header">
+            <div class="post-avatar" style="background:#6B48FF;">PR</div>
+            <div class="post-meta">
+              <div class="post-name">Priya Rajan</div>
+              <div class="post-sub">Senior Product Manager at Stripe · 1st</div>
+              <div class="post-sub">2h</div>
+            </div>
+          </div>
+          <div class="post-body">
+            Excited to share that after 6 months of hard work, our team at Stripe has shipped a completely redesigned checkout experience. We focused on reducing friction at every step — from loading times to form validation. The result? A 23% improvement in conversion rates across all markets. 🚀<br><br>
+            If you're building checkout flows, happy to share what we learned. Drop a comment or DM me!
+          </div>
+          <div class="post-stats"><span>👍 ❤️ 💡 847 reactions</span><span>134 comments · 28 reposts</span></div>
+          <div class="sum-loading" id="fsum-load-1"><span class="spin"></span> Summarising...</div>
+          <div class="post-summarize-bar" id="fsum-bar-1">
+            <span class="post-summary-text" id="fsum-text-1"></span>
+            <button class="sum-close" onclick="closeFeedSummary(1)">×</button>
+          </div>
+          <div class="post-actions">
+            <button class="post-action">👍 Like</button>
+            <button class="post-action">💬 Comment</button>
+            <button class="post-action">🔁 Repost</button>
+            <button class="post-action" onclick="summariseFeedPost(1,`Stripe shipped a completely redesigned checkout experience after 6 months of work, achieving a 23% improvement in conversion rates across all markets by reducing friction in loading times and form validation, made possible by a cross-functional team of engineering, design, and data science.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+          </div>
+        </div>
+
+        <!-- POST 2 -->
+        <div class="post-card" id="fpost-2" data-topics="hiring engineering career" data-author="Marcus Kim" data-company="Shopify" data-reactions="2341">
+          <div class="post-header">
+            <div class="post-avatar" style="background:#057642;">MK</div>
+            <div class="post-meta">
+              <div class="post-name">Marcus Kim</div>
+              <div class="post-sub">Engineering Manager at Shopify · 2nd</div>
+              <div class="post-sub">5h</div>
+            </div>
+          </div>
+          <div class="post-body">
+            Hot take: the best engineers I've hired in the last 3 years didn't have the best CVs. They had the best questions.<br><br>
+            During interviews I've started spending the last 10 minutes just listening to what candidates ask us. The questions reveal how they think about systems, people, and trade-offs. "How do you handle technical debt?" tells me more than any whiteboard problem.<br><br>
+            What's the best question a candidate has ever asked you?
+          </div>
+          <div class="post-stats"><span>👍 💡 2,341 reactions</span><span>412 comments · 89 reposts</span></div>
+          <div class="sum-loading" id="fsum-load-2"><span class="spin"></span> Summarising...</div>
+          <div class="post-summarize-bar" id="fsum-bar-2">
+            <span class="post-summary-text" id="fsum-text-2"></span>
+            <button class="sum-close" onclick="closeFeedSummary(2)">×</button>
+          </div>
+          <div class="post-actions">
+            <button class="post-action">👍 Like</button>
+            <button class="post-action">💬 Comment</button>
+            <button class="post-action">🔁 Repost</button>
+            <button class="post-action" onclick="summariseFeedPost(2,`The best engineers hired recently had the best questions rather than the best CVs, and spending the last 10 minutes of interviews listening to candidate questions reveals more about their thinking on systems and trade-offs than any whiteboard problem.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+          </div>
+        </div>
+
+        <!-- POST 3 -->
+        <div class="post-card" id="fpost-3" data-topics="ai engineering" data-author="Sofia Liu" data-company="Google DeepMind" data-reactions="5902">
+          <div class="post-header">
+            <div class="post-avatar" style="background:#B24020;">SL</div>
+            <div class="post-meta">
+              <div class="post-name">Sofia Liu</div>
+              <div class="post-sub">Staff ML Engineer at Google DeepMind · 1st</div>
+              <div class="post-sub">1d</div>
+            </div>
+          </div>
+          <div class="post-body">
+            We just published our research on reducing hallucinations in large language models by 40% using a new retrieval-augmented approach. It took 18 months, a lot of failed experiments, and some very late nights in London.<br><br>
+            The key insight: grounding every generation step against a verified knowledge graph rather than just the initial query. Paper link in comments. Would love feedback from others working in this space.
+          </div>
+          <div class="post-stats"><span>👍 ❤️ 🎉 5,902 reactions</span><span>876 comments · 441 reposts</span></div>
+          <div class="sum-loading" id="fsum-load-3"><span class="spin"></span> Summarising...</div>
+          <div class="post-summarize-bar" id="fsum-bar-3">
+            <span class="post-summary-text" id="fsum-text-3"></span>
+            <button class="sum-close" onclick="closeFeedSummary(3)">×</button>
+          </div>
+          <div class="post-actions">
+            <button class="post-action">👍 Like</button>
+            <button class="post-action">💬 Comment</button>
+            <button class="post-action">🔁 Repost</button>
+            <button class="post-action" onclick="summariseFeedPost(3,`Google DeepMind published research reducing LLM hallucinations by 40% using retrieval-augmented generation, with the key insight being grounding every generation step against a verified knowledge graph rather than just the initial query.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+          </div>
+        </div>
+
+        <!-- POST 4 -->
+        <div class="post-card" id="fpost-4" data-topics="hiring career" data-author="James Okonkwo" data-company="Notion" data-reactions="1182">
+          <div class="post-header">
+            <div class="post-avatar" style="background:#1a1a1a;">JO</div>
+            <div class="post-meta">
+              <div class="post-name">James Okonkwo</div>
+              <div class="post-sub">Head of Talent at Notion · 2nd</div>
+              <div class="post-sub">3h</div>
+            </div>
+          </div>
+          <div class="post-body">
+            We just closed our fastest ever senior hire — 8 days from first outreach to signed offer.<br><br>
+            What made the difference: the hiring manager had a decision framework ready before we started. Not just requirements, but a clear rubric for what "great" looks like at each stage. No committee drift, no last-minute bar raises.<br><br>
+            Hiring speed is a product of hiring clarity.
+          </div>
+          <div class="post-stats"><span>👍 ❤️ 💡 1,182 reactions</span><span>203 comments · 51 reposts</span></div>
+          <div class="sum-loading" id="fsum-load-4"><span class="spin"></span> Summarising...</div>
+          <div class="post-summarize-bar" id="fsum-bar-4">
+            <span class="post-summary-text" id="fsum-text-4"></span>
+            <button class="sum-close" onclick="closeFeedSummary(4)">×</button>
+          </div>
+          <div class="post-actions">
+            <button class="post-action">👍 Like</button>
+            <button class="post-action">💬 Comment</button>
+            <button class="post-action">🔁 Repost</button>
+            <button class="post-action" onclick="summariseFeedPost(4,`Notion's Head of Talent closed a senior hire in 8 days because the hiring manager had a pre-defined decision rubric, eliminating committee drift and last-minute bar raises — proving that hiring speed is a product of hiring clarity.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+          </div>
+        </div>
+
+        <!-- POST 5 -->
+        <div class="post-card" id="fpost-5" data-topics="ai hiring" data-author="Rachel Torres" data-company="Anthropic" data-reactions="3740">
+          <div class="post-header">
+            <div class="post-avatar" style="background:#CC5500;">RT</div>
+            <div class="post-meta">
+              <div class="post-name">Rachel Torres</div>
+              <div class="post-sub">Recruiting Lead at Anthropic · 1st</div>
+              <div class="post-sub">7h</div>
+            </div>
+          </div>
+          <div class="post-body">
+            Unpopular opinion: AI-assisted screening is making recruiting worse, not better.<br><br>
+            When you let a model rank CVs, you optimise for legibility, not potential. The best hires I've made in the past two years wouldn't have made it past an automated filter.<br><br>
+            The tool should prepare you better for the conversation — not replace the conversation.
+          </div>
+          <div class="post-stats"><span>👍 💡 🔥 3,740 reactions</span><span>561 comments · 142 reposts</span></div>
+          <div class="sum-loading" id="fsum-load-5"><span class="spin"></span> Summarising...</div>
+          <div class="post-summarize-bar" id="fsum-bar-5">
+            <span class="post-summary-text" id="fsum-text-5"></span>
+            <button class="sum-close" onclick="closeFeedSummary(5)">×</button>
+          </div>
+          <div class="post-actions">
+            <button class="post-action">👍 Like</button>
+            <button class="post-action">💬 Comment</button>
+            <button class="post-action">🔁 Repost</button>
+            <button class="post-action" onclick="summariseFeedPost(5,`Anthropic's recruiting lead argues AI-assisted screening worsens hiring by optimising for CV legibility over potential, with the best recent hires being ones that would have failed automated filters — AI should prepare interviewers, not replace their judgment.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
@@ -1239,6 +1425,80 @@
     if (tabEl) tabEl.classList.add('active');
     document.getElementById('pane-postings').style.display = name === 'postings' ? '' : 'none';
     document.getElementById('pane-pipeline').style.display = name === 'pipeline' ? '' : 'none';
+    document.getElementById('pane-feed').style.display = name === 'feed' ? '' : 'none';
+  }
+
+  // ── Feed tab: summarizer + filters ──────────────────────────────────────────
+
+  async function summariseFeedPost(num, text, btn) {
+    const bar = document.getElementById('fsum-bar-'+num);
+    const textEl = document.getElementById('fsum-text-'+num);
+    const loadEl = document.getElementById('fsum-load-'+num);
+    if (bar && bar.classList.contains('show')) { bar.classList.remove('show'); return; }
+    if (loadEl) loadEl.style.display = 'flex';
+    try {
+      const res = await fetch(getBase()+'/summarize', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({text})});
+      const data = await res.json();
+      if (textEl) textEl.textContent = data.summary || text.slice(0,120)+'…';
+      if (bar) bar.classList.add('show');
+    } catch(e) {
+      if (textEl) textEl.textContent = text.slice(0,120)+'…';
+      if (bar) bar.classList.add('show');
+    } finally {
+      if (loadEl) loadEl.style.display = 'none';
+    }
+  }
+
+  function closeFeedSummary(num) {
+    const bar = document.getElementById('fsum-bar-'+num);
+    if (bar) bar.classList.remove('show');
+  }
+
+  let _feedTopic = 'all', _feedSort = 'recent';
+
+  function toggleFeedChip(el, filter) {
+    document.querySelectorAll(`#pane-feed .chip[data-filter="${filter}"]`).forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    if (filter === 'ftopic') _feedTopic = el.dataset.value;
+    if (filter === 'fsort') _feedSort = el.dataset.value;
+    applyFeedFilters();
+  }
+
+  function applyFeedFilters() {
+    const kw = (document.getElementById('feed-filter-keyword') || {}).value?.toLowerCase() || '';
+    const posts = document.querySelectorAll('#pane-feed .post-card');
+    const feedPane = document.getElementById('pane-feed');
+    const postArr = Array.from(posts);
+    if (_feedSort === 'top') {
+      postArr.sort((a, b) => parseInt(b.dataset.reactions||0) - parseInt(a.dataset.reactions||0));
+    } else {
+      postArr.sort((a, b) => postArr.indexOf(a) - postArr.indexOf(b));
+    }
+    postArr.forEach(p => feedPane.appendChild(p));
+    let visible = 0;
+    posts.forEach(post => {
+      const topics = post.dataset.topics || '';
+      const text = post.innerText.toLowerCase();
+      const topicMatch = _feedTopic === 'all' || topics.includes(_feedTopic);
+      const kwMatch = !kw || text.includes(kw) || (post.dataset.author||'').toLowerCase().includes(kw) || (post.dataset.company||'').toLowerCase().includes(kw);
+      const show = topicMatch && kwMatch;
+      post.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+    const isFiltered = _feedTopic !== 'all' || kw;
+    const fr = document.getElementById('feed-filter-results');
+    if (fr) fr.textContent = isFiltered ? `Showing ${visible} of ${posts.length} posts` : '';
+    const nr = document.getElementById('feed-no-results');
+    if (nr) nr.style.display = (visible === 0) ? '' : 'none';
+  }
+
+  function clearFeedFilters() {
+    const kw = document.getElementById('feed-filter-keyword');
+    if (kw) kw.value = '';
+    _feedTopic = 'all'; _feedSort = 'recent';
+    document.querySelectorAll('#pane-feed .chip[data-filter="ftopic"]').forEach(c => c.classList.toggle('active', c.dataset.value === 'all'));
+    document.querySelectorAll('#pane-feed .chip[data-filter="fsort"]').forEach(c => c.classList.toggle('active', c.dataset.value === 'recent'));
+    applyFeedFilters();
   }
 
   function viewPipeline(jobId, title) {

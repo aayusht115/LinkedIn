@@ -29,8 +29,13 @@ ROUND_OBJECTIVES = {
 def _load_model():
     global _tokenizer, _model
     if _tokenizer is None:
-        _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-        _model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float32)
+        try:
+            _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+            _model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float32)
+        except Exception as e:
+            print(f"[summarizer] Could not load model ({e}). AI features will use fallback text.")
+            _tokenizer = False  # sentinel: attempted but failed
+            _model = None
 
 def _parse_json_list(value):
     if not value:
@@ -229,8 +234,13 @@ def calculate_fit_breakdown(profile, job):
         },
     }
 
+def _model_available():
+    return _model is not None and _tokenizer is not False
+
 def summarize_post(text):
     _load_model()
+    if not _model_available():
+        return (text[:180] + "…") if len(text) > 180 else text
 
     messages = [
         {"role": "system", "content": "You are a helpful assistant that summarizes LinkedIn posts in exactly one short sentence. Reply with only the summary sentence, nothing else."},
@@ -263,6 +273,8 @@ def analyze_fit(profile, job):
     """AI-powered fit analysis using Qwen."""
     _load_model()
     breakdown = calculate_fit_breakdown(profile, job)
+    if not _model_available():
+        return {**breakdown, "analysis": "AI analysis unavailable — model could not be loaded on this server."}
     skills = profile.get("skills", "") or "not specified"
     location = profile.get("location", "") or "not specified"
     experience_entries = _parse_json_list(profile.get("experience"))
@@ -310,6 +322,8 @@ def analyze_fit(profile, job):
 def generate_screening_note(profile, job, application=None):
     _load_model()
     breakdown = calculate_fit_breakdown(profile, job)
+    if not _model_available():
+        return {"note": "AI screening unavailable — model could not be loaded.", "score": breakdown["score"], "breakdown": breakdown}
     prompt = (
         f"<|im_start|>system\nYou write recruiter screening notes. Be concise and actionable.<|im_end|>\n"
         f"<|im_start|>user\n"
@@ -338,7 +352,8 @@ def generate_screening_note(profile, job, application=None):
 def generate_interview_questions(job):
     """Generate role-specific interview questions using Qwen."""
     _load_model()
-
+    if not _model_available():
+        return "AI question generation unavailable — model could not be loaded."
     prompt = (
         f"<|im_start|>system\nYou are a technical interviewer. List interview questions only.<|im_end|>\n"
         f"<|im_start|>user\n"
@@ -361,6 +376,8 @@ def generate_interview_questions(job):
 def generate_round_brief_pack(profile, job, application=None, round_info=None):
     _load_model()
     round_info = round_info or {}
+    if not _model_available():
+        return {"candidate_summary": _candidate_summary(profile), "screening_bullets": "AI unavailable.", "recruiter_notes": (application or {}).get("recruiter_notes") or "", "resume_highlights": _resume_highlights(profile), "gaps_to_probe": [], "round_objective": round_objective_for((round_info or {}).get("round_type")), "interviewer_guidance": "AI guidance unavailable — model could not be loaded."}
     breakdown = calculate_fit_breakdown(profile, job)
     objective = round_info.get("objective") or round_objective_for(round_info.get("round_type"))
     candidate_summary = _candidate_summary(profile)
@@ -422,6 +439,8 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
 def generate_candidate_interview_questions(profile, job, application=None, round_info=None, previous_feedback=None):
     _load_model()
     round_info = round_info or {}
+    if not _model_available():
+        return "AI question generation unavailable — model could not be loaded."
     breakdown = calculate_fit_breakdown(profile, job)
     objective = round_info.get("objective") or round_objective_for(round_info.get("round_type"))
     candidate_summary = _candidate_summary(profile)
@@ -471,6 +490,8 @@ def generate_candidate_interview_questions(profile, job, application=None, round
 def generate_resume_bio(resume_text, existing_profile=None):
     _load_model()
     existing_profile = existing_profile or {}
+    if not _model_available():
+        return existing_profile.get("bio") or ""
     fallback = fallback_profile_from_resume(resume_text, existing_profile)
     prompt = (
         f"<|im_start|>system\nYou write concise professional bios for job platforms.\n<|im_end|>\n"
