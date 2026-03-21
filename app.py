@@ -468,8 +468,8 @@ def delete_round_route(round_id):
     round_row = get_interview_round(round_id)
     if not round_row:
         return jsonify({"error": "Interview round not found"}), 404
-    if round_row.get("finalized_at") or round_row.get("scheduled_time") or round_row.get("meeting_link"):
-        return jsonify({"error": "Only unsaved, unscheduled rounds can be removed."}), 409
+    if round_row.get("finalized_at") or round_row.get("meeting_link"):
+        return jsonify({"error": "Cannot remove a round that has been scheduled or finalized."}), 409
     delete_interview_round(round_id)
     return jsonify({"ok": True})
 

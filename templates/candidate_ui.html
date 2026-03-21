@@ -728,14 +728,15 @@
             }).join('')}
           </div>` : '';
 
+        const offerExpired = a.offer_due_date && new Date(a.offer_due_date) < new Date();
         const offerCard = a.status === 'offer' ? `
-          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-top:8px;">
-            <div style="font-size:12px;font-weight:700;color:#057642;margin-bottom:6px;">You have a job offer!</div>
-            ${a.offer_due_date ? `<div style="font-size:11px;color:var(--li-muted);margin-bottom:8px;">Please respond by <strong>${new Date(a.offer_due_date).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</strong></div>` : ''}
-            <div style="display:flex;gap:8px;">
+          <div style="background:${offerExpired?'#FFF7ED':'#F0FDF4'};border:1px solid ${offerExpired?'#FED7AA':'#BBF7D0'};border-radius:8px;padding:10px 12px;margin-top:8px;">
+            <div style="font-size:12px;font-weight:700;color:${offerExpired?'#C2410C':'#057642'};margin-bottom:6px;">${offerExpired?'Offer deadline has passed — contact the recruiter':'You have a job offer!'}</div>
+            ${a.offer_due_date ? `<div style="font-size:11px;color:var(--li-muted);margin-bottom:8px;">Response was due by <strong>${new Date(a.offer_due_date).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</strong></div>` : ''}
+            ${!offerExpired ? `<div style="display:flex;gap:8px;">
               <button onclick="acceptOffer('${a.id}')" style="flex:1;padding:8px;border-radius:20px;border:none;background:#057642;color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">Accept Offer</button>
               <button onclick="declineOffer('${a.id}')" style="flex:1;padding:8px;border-radius:20px;border:1.5px solid #c0392b;background:#fff;color:#c0392b;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">Decline</button>
-            </div>
+            </div>` : ''}
           </div>` : '';
 
         const hiredCard = a.status === 'hired' ? `
