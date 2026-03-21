@@ -22,7 +22,8 @@ from database import (
     apply_to_job, get_application, has_applied, get_applications_by_user, get_applications_by_job,
     update_application_status, get_application_by_id, update_application_ai, update_application_notes,
     update_application_offer, update_application_candidate_decision,
-    create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round,
+    create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round, delete_interview_round,
+    delete_interview_round,
 )
 
 app = Flask(__name__)
@@ -400,6 +401,10 @@ def create_round_route(application_id):
     if not application:
         return jsonify({"error": "Application not found"}), 404
 
+    existing_rounds = get_interview_rounds_by_application(application_id)
+    if any(not round_row.get("finalized_at") for round_row in existing_rounds):
+        return jsonify({"error": "Complete the current round before adding the next one."}), 409
+
     data = request.json or {}
     round_type = data.get("round_type", "screening_call")
     valid_types = {"screening_call", "technical_round", "manager_round", "final_panel", "culture_round", "hr_round"}
@@ -424,6 +429,8 @@ def update_round_route(round_id):
     round_row = get_interview_round(round_id)
     if not round_row:
         return jsonify({"error": "Interview round not found"}), 404
+    if round_row.get("finalized_at"):
+        return jsonify({"error": "This round is already saved and locked."}), 409
 
     data = request.json or {}
     if "round_type" in data:
@@ -442,8 +449,11 @@ def update_round_route(round_id):
             return jsonify({"error": "round_number must be at least 1"}), 400
 
     rejection_reason = (data.pop("rejection_reason", None) or "").strip() or None
-    updated = update_interview_round(round_id, data)
     decision = (data.get("decision") or "").strip().lower()
+    if decision:
+        from datetime import datetime, timezone
+        data["finalized_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    updated = update_interview_round(round_id, data)
     if updated and decision:
         if decision == "reject":
             update_application_offer(updated["application_id"], rejection_reason=rejection_reason, status="rejected")
@@ -452,6 +462,16 @@ def update_round_route(round_id):
         elif decision == "advance":
             update_application_status(updated["application_id"], "offer")
     return jsonify(updated)
+
+@app.route("/interview-rounds/<round_id>", methods=["DELETE"])
+def delete_round_route(round_id):
+    round_row = get_interview_round(round_id)
+    if not round_row:
+        return jsonify({"error": "Interview round not found"}), 404
+    if round_row.get("finalized_at") or round_row.get("scheduled_time") or round_row.get("meeting_link"):
+        return jsonify({"error": "Only unsaved, unscheduled rounds can be removed."}), 409
+    delete_interview_round(round_id)
+    return jsonify({"ok": True})
 
 @app.route("/interview-rounds/<round_id>/brief-pack", methods=["POST"])
 def generate_round_brief_route(round_id):
@@ -508,9 +528,14 @@ def generate_round_ai_pack_route(round_id):
         return jsonify({"error": "Job not found"}), 404
 
     profile = _profile_for_application(application)
+    all_rounds = get_interview_rounds_by_application(round_row["application_id"])
+    prev_feedback = None
+    for r in sorted(all_rounds, key=lambda x: x.get("round_number") or 0):
+        if r["id"] != round_id and r.get("finalized_at") and r.get("feedback"):
+            prev_feedback = r["feedback"]
     from summarizer import generate_round_brief_pack, generate_candidate_interview_questions
     brief_pack = generate_round_brief_pack(profile, job, application, round_row)
-    questions = generate_candidate_interview_questions(profile, job, application, round_row)
+    questions = generate_candidate_interview_questions(profile, job, application, round_row, previous_feedback=prev_feedback)
     updated = update_interview_round(round_id, {
         "objective": brief_pack.get("round_objective") or round_row.get("objective"),
         "brief_pack": brief_pack,

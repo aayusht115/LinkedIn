@@ -419,7 +419,7 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
         "interviewer_guidance": briefing_text,
     }
 
-def generate_candidate_interview_questions(profile, job, application=None, round_info=None):
+def generate_candidate_interview_questions(profile, job, application=None, round_info=None, previous_feedback=None):
     _load_model()
     round_info = round_info or {}
     breakdown = calculate_fit_breakdown(profile, job)
@@ -432,6 +432,7 @@ def generate_candidate_interview_questions(profile, job, application=None, round
         or (application or {}).get("screening_note")
         or "none"
     )
+    prev_feedback_line = f"Previous round feedback: {previous_feedback}\n" if previous_feedback else ""
 
     prompt = (
         f"<|im_start|>system\nYou are an expert interviewer preparing a highly targeted interview pack.\n<|im_end|>\n"
@@ -442,6 +443,7 @@ def generate_candidate_interview_questions(profile, job, application=None, round
         f"Experience: {experience_summary}\n"
         f"Resume highlights: {resume_highlights}\n"
         f"Recruiter notes: {recruiter_notes}\n"
+        f"{prev_feedback_line}"
         f"Candidate location: {profile.get('location', '') or 'not specified'}\n"
         f"Job: {job.get('title', '')} at {job.get('company', '')}\n"
         f"Tech stack / skills: {job.get('skills', '')}\n"

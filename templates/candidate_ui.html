@@ -104,6 +104,7 @@
     .toast.show{opacity:1;}
     .spin{display:inline-block;width:16px;height:16px;border:2px solid #ccc;border-top-color:var(--li-blue);border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle;}
     @keyframes sp{to{transform:rotate(360deg);}}
+    .btn-spin{display:inline-block;width:10px;height:10px;border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle;margin-right:4px;opacity:0.8;}
     .settings-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 14px;margin-bottom:12px;font-size:13px;display:flex;align-items:center;gap:10px;}
     .settings-bar input{border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:13px;width:220px;}
     .settings-bar label{font-weight:600;white-space:nowrap;}
@@ -206,6 +207,7 @@
       <div class="sidebar-link" onclick="showApplied()">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Applied Jobs <span id="applied-count" style="margin-left:auto;font-weight:700;color:var(--li-blue);font-size:12px;"></span>
+        <span id="interview-notify" style="display:none;background:#c0392b;color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:10px;font-weight:700;align-items:center;justify-content:center;flex-shrink:0;"></span>
       </div>
     </div>
   </div>
@@ -285,7 +287,7 @@
         <button class="post-action">👍 Like</button>
         <button class="post-action">💬 Comment</button>
         <button class="post-action">🔁 Repost</button>
-        <button class="post-action" onclick="summarisePost(1,`Stripe shipped a completely redesigned checkout experience after 6 months of work, achieving a 23% improvement in conversion rates across all markets by reducing friction in loading times and form validation, made possible by a cross-functional team of engineering, design, and data science.`)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+        <button class="post-action" onclick="summarisePost(1,`Stripe shipped a completely redesigned checkout experience after 6 months of work, achieving a 23% improvement in conversion rates across all markets by reducing friction in loading times and form validation, made possible by a cross-functional team of engineering, design, and data science.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
       </div>
     </div>
 
@@ -314,7 +316,7 @@
         <button class="post-action">👍 Like</button>
         <button class="post-action">💬 Comment</button>
         <button class="post-action">🔁 Repost</button>
-        <button class="post-action" onclick="summarisePost(2,`The best engineers hired recently had the best questions rather than the best CVs, and spending the last 10 minutes of interviews listening to candidate questions reveals more about their thinking on systems and trade-offs than any whiteboard problem.`)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+        <button class="post-action" onclick="summarisePost(2,`The best engineers hired recently had the best questions rather than the best CVs, and spending the last 10 minutes of interviews listening to candidate questions reveals more about their thinking on systems and trade-offs than any whiteboard problem.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
       </div>
     </div>
 
@@ -342,7 +344,7 @@
         <button class="post-action">👍 Like</button>
         <button class="post-action">💬 Comment</button>
         <button class="post-action">🔁 Repost</button>
-        <button class="post-action" onclick="summarisePost(3,`Google DeepMind published research reducing LLM hallucinations by 40% using retrieval-augmented generation, with the key insight being grounding every generation step against a verified knowledge graph rather than just the initial query.`)"><span style="color:#0A66C2">✦ AI Summary</span></button>
+        <button class="post-action" onclick="summarisePost(3,`Google DeepMind published research reducing LLM hallucinations by 40% using retrieval-augmented generation, with the key insight being grounding every generation step against a verified knowledge graph rather than just the initial query.`,this)"><span style="color:#0A66C2">✦ AI Summary</span></button>
       </div>
     </div>
   </div>
@@ -594,6 +596,24 @@
       const list = await res.json();
       const el = document.getElementById('applied-count');
       if(el) el.textContent = list.length || '';
+      // Check for upcoming scheduled interviews
+      const now = new Date();
+      let upcomingCount = 0;
+      await Promise.all(list.map(async a => {
+        try {
+          const r = await fetch(getBase()+`/applications/${a.id}/rounds`);
+          if (!r.ok) return;
+          const rounds = await r.json();
+          rounds.forEach(round => {
+            if (round.scheduled_time && round.meeting_link && !round.finalized_at && new Date(round.scheduled_time) >= now) upcomingCount++;
+          });
+        } catch {}
+      }));
+      const badge = document.getElementById('interview-notify');
+      if (badge) {
+        if (upcomingCount > 0) { badge.style.display = 'flex'; badge.textContent = upcomingCount; }
+        else { badge.style.display = 'none'; }
+      }
     } catch{}
   }
 
@@ -675,7 +695,39 @@
       const res = await fetch(getBase()+'/applications?user='+CANDIDATE_ID);
       const apps = await res.json();
       if(apps.length===0){ list.innerHTML='<div style="padding:8px;font-size:13px;color:var(--li-muted);">No applications yet.</div>'; return; }
-      list.innerHTML = apps.map(a=>{
+
+      // Fetch rounds for each application
+      const roundsPerApp = await Promise.all(apps.map(async a => {
+        try {
+          const r = await fetch(getBase()+`/applications/${a.id}/rounds`);
+          return r.ok ? await r.json() : [];
+        } catch { return []; }
+      }));
+
+      list.innerHTML = apps.map((a, idx) => {
+        const rounds = roundsPerApp[idx] || [];
+        const scheduledRounds = rounds.filter(r => r.scheduled_time && r.meeting_link);
+        const now = new Date();
+
+        const interviewsHtml = scheduledRounds.length ? `
+          <div style="margin-top:8px;">
+            ${scheduledRounds.map(r => {
+              const dt = new Date(r.scheduled_time);
+              const upcoming = dt >= now;
+              const dateStr = dt.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+              const roundLabel = (r.round_type||'interview').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+              const isFinalized = !!r.finalized_at;
+              return `<div style="background:#EEF3F8;border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:12px;font-weight:700;color:#0A66C2;">${roundLabel}</div>
+                  <div style="font-size:11px;color:var(--li-muted);">${dateStr}</div>
+                </div>
+                <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;${isFinalized?'background:#F0FDF4;color:#057642;':upcoming?'background:#EFF6FF;color:#0A66C2;':'background:#F3F2EF;color:#5F5E5A;'}">${isFinalized?'Completed':upcoming?'Upcoming':'Done'}</span>
+                ${upcoming && !isFinalized ? `<a href="${r.meeting_link}" target="_blank" style="font-size:11px;font-weight:700;color:#0A66C2;white-space:nowrap;text-decoration:none;background:#fff;border:1.5px solid #0A66C2;border-radius:12px;padding:3px 10px;">Join ↗</a>` : ''}
+              </div>`;
+            }).join('')}
+          </div>` : '';
+
         const offerCard = a.status === 'offer' ? `
           <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-top:8px;">
             <div style="font-size:12px;font-weight:700;color:#057642;margin-bottom:6px;">You have a job offer!</div>
@@ -709,7 +761,7 @@
             <div style="margin-top:8px;padding-left:4px;">
               ${renderCandidateStageTrack(a.status)}
             </div>
-            ${offerCard}${hiredCard}${rejectedCard}
+            ${interviewsHtml}${offerCard}${hiredCard}${rejectedCard}
           </div>
         `;
       }).join('');
@@ -743,7 +795,7 @@
   function closeModal(id){
     document.getElementById('modal-'+id).classList.remove('open');
     if(id==='score') document.getElementById('r-score-display').style.display='none';
-    if(id==='jobfit'){ document.getElementById('jf-result').style.display='none'; document.getElementById('jf-btn').disabled=false; document.getElementById('jf-btn').textContent='Calculate Fit'; }
+    if(id==='jobfit'){ document.getElementById('jf-result').style.display='none'; document.getElementById('jf-btn').disabled=false; document.getElementById('jf-btn').innerHTML='Calculate Fit'; }
   }
   function prefillScore(id){
     openScoreModal();
@@ -769,7 +821,7 @@
   async function doScore(){
     const id=document.getElementById('r-id').value;
     if(!id){ showToast('Select a recruiter first'); return; }
-    const btn=document.getElementById('r-btn'); btn.disabled=true; btn.textContent='Loading…';
+    const btn=document.getElementById('r-btn'); btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span>Loading…';
     try{
       const res=await fetch(getBase()+'/recruiter_score/'+encodeURIComponent(id));
       const d=await res.json();
@@ -805,13 +857,15 @@
         :'Below-average track record. Consider reaching out directly to the hiring manager or finding other contacts.';
       document.getElementById('r-advice').textContent=advice;
       document.getElementById('r-score-display').style.display='block';
-      btn.disabled=false; btn.textContent='Refresh';
-    }catch(e){ showToast('Cannot reach server'); btn.disabled=false; btn.textContent='Get Score'; }
+      btn.disabled=false; btn.innerHTML='Refresh';
+    }catch(e){ showToast('Cannot reach server'); btn.disabled=false; btn.innerHTML='Get Score'; }
   }
 
-  async function summarisePost(num,text){
+  async function summarisePost(num,text,btn){
     const bar=document.getElementById('sum-bar-'+num); const load=document.getElementById('sum-load-'+num);
     if(bar.classList.contains('show')) return;
+    const origInner = btn ? btn.innerHTML : null;
+    if(btn){ btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span><span style="color:#0A66C2">Summarising…</span>'; }
     load.style.display='block';
     try{
       const res=await fetch(getBase()+'/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
@@ -819,6 +873,7 @@
       document.getElementById('sum-text-'+num).textContent=d.summary;
     }catch(e){ document.getElementById('sum-text-'+num).textContent='Could not reach Flask — is it running?'; }
     load.style.display='none'; bar.classList.add('show');
+    if(btn){ btn.disabled=false; btn.innerHTML = origInner || '<span style="color:#0A66C2">✦ AI Summary</span>'; }
   }
   function closeSummary(num){ document.getElementById('sum-bar-'+num).classList.remove('show'); }
   document.querySelectorAll('.modal-overlay').forEach(el=>{
@@ -924,7 +979,7 @@
     if(jfSkills.length===0){ showToast('Add at least one skill'); return; }
     if(!reqs){ showToast('Paste the job requirements'); return; }
     if(!currentFitJob){ showToast('Open job fit from a job card first'); return; }
-    const btn=document.getElementById('jf-btn'); btn.disabled=true; btn.textContent='Calculating…';
+    const btn=document.getElementById('jf-btn'); btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span>Calculating…';
     fetch(getBase()+'/analyze-fit', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -980,7 +1035,7 @@
       })
       .catch(() => {
         showToast('Could not run AI fit analysis.');
-        btn.disabled=false; btn.textContent='Calculate Fit';
+        btn.disabled=false; btn.innerHTML='Calculate Fit';
       });
   }
 

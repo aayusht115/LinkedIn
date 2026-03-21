@@ -100,6 +100,7 @@
     .toast.show{opacity:1;}
     .spin{display:inline-block;width:16px;height:16px;border:2px solid #ccc;border-top-color:var(--li-blue);border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle;}
     @keyframes sp{to{transform:rotate(360deg);}}
+    .btn-spin{display:inline-block;width:10px;height:10px;border:1.5px solid currentColor;border-top-color:transparent;border-radius:50%;animation:sp 0.6s linear infinite;vertical-align:middle;margin-right:4px;opacity:0.8;}
     .settings-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 14px;margin-bottom:12px;font-size:13px;display:flex;align-items:center;gap:10px;}
     .settings-bar input{border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:13px;width:220px;}
     .settings-bar label{font-weight:600;white-space:nowrap;}
@@ -1094,6 +1095,41 @@
   let pipelineCurrentStage = 'all';
   let expandedCards = new Set();
   let expandedRounds = new Set();
+  let expandedAiSections = new Set();
+
+  function toggleAiSection(key) {
+    const content = document.getElementById(`ai-section-${key}`);
+    const icon = document.getElementById(`ai-icon-${key}`);
+    if (!content) return;
+    if (expandedAiSections.has(key)) {
+      expandedAiSections.delete(key);
+      content.style.display = 'none';
+      if (icon) icon.textContent = '▼';
+    } else {
+      expandedAiSections.add(key);
+      content.style.display = '';
+      if (icon) icon.textContent = '▲';
+    }
+  }
+
+  function joinAndDebrief(event, applicationId, roundId, meetingUrl) {
+    event.stopPropagation();
+    window.open(meetingUrl, '_blank');
+    expandedCards.add(applicationId);
+    expandedRounds.add(roundId);
+    renderApplicants();
+    setTimeout(() => {
+      const feedback = document.getElementById(`round-feedback-${roundId}`);
+      if (feedback) {
+        feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        feedback.style.transition = 'border-color 0.2s, box-shadow 0.2s';
+        feedback.style.borderColor = '#0A66C2';
+        feedback.style.boxShadow = '0 0 0 3px rgba(10,102,194,0.2)';
+        feedback.focus();
+        setTimeout(() => { feedback.style.borderColor = ''; feedback.style.boxShadow = ''; }, 3500);
+      }
+    }, 120);
+  }
 
   function toggleCard(appId) {
     const body = document.getElementById('app-body-'+appId);
@@ -1286,7 +1322,6 @@
       interviewer_name: document.getElementById(`round-interviewer-${roundId}`).value.trim(),
       scheduled_time: document.getElementById(`round-time-${roundId}`).value || null,
       decision,
-      notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
       feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
     };
     if (rejectionReason) payload.rejection_reason = rejectionReason;
@@ -1295,16 +1330,21 @@
         method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error();
+      const updatedRound = await res.json();
+
+      // Update the decided round in local state (gets finalized_at set by backend)
+      const baseRounds = (roundsByApplication[applicationId] || []).map(r =>
+        r.id === roundId ? updatedRound : r
+      );
 
       if (decision === 'more_round_required') {
-        // Auto-add next round and open it for scheduling
         const rndRes = await fetch(getBase()+`/applications/${applicationId}/rounds`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ round_type: nextRoundType(applicationId) })
         });
         if (!rndRes.ok) throw new Error();
         const newRound = await rndRes.json();
-        syncRounds(applicationId, [...(roundsByApplication[applicationId] || []), newRound]);
+        syncRounds(applicationId, [...baseRounds, newRound]);
         expandedCards.add(applicationId);
         expandedRounds.add(newRound.id);
         renderApplicants();
@@ -1320,6 +1360,20 @@
     } catch(e) { showToast('Could not save decision.'); }
   }
 
+  async function deleteRound(applicationId, roundId) {
+    if (!confirm('Remove this round?')) return;
+    try {
+      const res = await fetch(getBase()+`/interview-rounds/${roundId}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Cannot remove this round.'); return;
+      }
+      syncRounds(applicationId, (roundsByApplication[applicationId] || []).filter(r => r.id !== roundId));
+      renderApplicants();
+      showToast('Round removed.');
+    } catch(e) { showToast('Could not remove round.'); }
+  }
+
   async function setOfferDueDate(applicationId) {
     const val = document.getElementById(`offer-due-${applicationId}`).value;
     try {
@@ -1331,6 +1385,7 @@
       const updated = await res.json();
       const app = allApplicants.find(a => a.id === applicationId);
       if (app) app.offer_due_date = updated.offer_due_date;
+      renderApplicants();
       showToast('Offer due date saved.');
     } catch(e) { showToast('Could not save due date.'); }
   }
@@ -1372,34 +1427,48 @@
     return `<span class="decision-pill" style="${DECISION_STYLES[decision] || 'background:#EEF3F8;color:#0A66C2;'}">${DECISION_LABELS[decision] || decision}</span>`;
   }
 
-  function renderBriefPack(rawPack) {
+  function renderBriefPack(rawPack, roundId) {
     const pack = parseJsonSafe(rawPack);
     if (!pack) return '';
+    const key = `${roundId}-brief`;
+    const isOpen = expandedAiSections.has(key);
     const highlights = Array.isArray(pack.resume_highlights) ? pack.resume_highlights : [];
     const gaps = Array.isArray(pack.gaps_to_probe) ? pack.gaps_to_probe : [];
     return `
-      <div class="round-ai-box">
-        <div class="round-ai-title">✦ AI Interview Brief</div>
-        ${pack.screening_bullets ? `
-        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:9px 12px;margin-bottom:10px;">
-          <div style="font-size:10px;font-weight:800;color:#057642;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Screening Note</div>
-          <div style="font-size:12px;color:var(--li-text);line-height:1.6;">${formatRichText(pack.screening_bullets)}</div>
-        </div>` : ''}
-        <div class="round-ai-copy"><strong>Candidate summary:</strong> ${formatRichText(pack.candidate_summary || 'Not available')}</div>
-        <div class="round-ai-copy" style="margin-top:6px;"><strong>Round objective:</strong> ${formatRichText(pack.round_objective || 'Not set')}</div>
-        ${highlights.length ? `<div class="round-list" style="margin-top:6px;">${highlights.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
-        ${gaps.length ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Gaps to probe:</strong></div><div class="round-list">${gaps.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
-        ${pack.interviewer_guidance ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Round briefing:</strong><br>${formatRichText(pack.interviewer_guidance)}</div>` : ''}
+      <div class="round-ai-box" style="padding:0;">
+        <div onclick="toggleAiSection('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;">
+          <div class="round-ai-title" style="margin:0;">✦ AI Interview Brief</div>
+          <span id="ai-icon-${key}" style="font-size:11px;color:var(--li-muted);">${isOpen ? '▲' : '▼'}</span>
+        </div>
+        <div id="ai-section-${key}" style="display:${isOpen ? '' : 'none'};padding:0 14px 12px;border-top:1px solid var(--li-border);">
+          ${pack.screening_bullets ? `
+          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:9px 12px;margin-top:10px;margin-bottom:6px;">
+            <div style="font-size:10px;font-weight:800;color:#057642;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Screening Note</div>
+            <div style="font-size:12px;color:var(--li-text);line-height:1.6;">${formatRichText(pack.screening_bullets)}</div>
+          </div>` : ''}
+          <div class="round-ai-copy" style="margin-top:8px;"><strong>Candidate summary:</strong> ${formatRichText(pack.candidate_summary || 'Not available')}</div>
+          <div class="round-ai-copy" style="margin-top:6px;"><strong>Round objective:</strong> ${formatRichText(pack.round_objective || 'Not set')}</div>
+          ${highlights.length ? `<div class="round-list" style="margin-top:6px;">${highlights.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+          ${gaps.length ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Gaps to probe:</strong></div><div class="round-list">${gaps.map(item => `<span class="round-tag">${escapeHtml(item)}</span>`).join('')}</div>` : ''}
+          ${pack.interviewer_guidance ? `<div class="round-ai-copy" style="margin-top:8px;"><strong>Round briefing:</strong><br>${formatRichText(pack.interviewer_guidance)}</div>` : ''}
+        </div>
       </div>
     `;
   }
 
-  function renderQuestionPack(rawQuestions) {
+  function renderQuestionPack(rawQuestions, roundId) {
     if (!rawQuestions) return '';
+    const key = `${roundId}-questions`;
+    const isOpen = expandedAiSections.has(key);
     return `
-      <div class="round-ai-box">
-        <div class="round-ai-title">Candidate-Specific AI Questions</div>
-        <div class="round-ai-copy">${formatRichText(rawQuestions)}</div>
+      <div class="round-ai-box" style="padding:0;">
+        <div onclick="toggleAiSection('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;">
+          <div class="round-ai-title" style="margin:0;">Candidate-Specific Questions</div>
+          <span id="ai-icon-${key}" style="font-size:11px;color:var(--li-muted);">${isOpen ? '▲' : '▼'}</span>
+        </div>
+        <div id="ai-section-${key}" style="display:${isOpen ? '' : 'none'};padding:0 14px 12px;border-top:1px solid var(--li-border);">
+          <div class="round-ai-copy" style="margin-top:10px;">${formatRichText(rawQuestions)}</div>
+        </div>
       </div>
     `;
   }
@@ -1447,7 +1516,14 @@
         </div>
         ${rounds.length === 0
           ? `<div class="timeline-empty">No rounds yet — click "+ Add round" to begin the interview process.</div>`
-          : rounds.map(round => {
+          : rounds.map((round, idx) => {
+              const isCompleted = !!round.finalized_at;
+              // Only the first non-finalized round is "current" (active/editable)
+              const currentRoundIdx = rounds.findIndex(r => !r.finalized_at);
+              const isCurrent = idx === currentRoundIdx;
+              const canEdit = !isCompleted && isCurrent;
+              const canRemove = !isCompleted && !round.scheduled_time && !round.meeting_link;
+              const prevRound = idx > 0 ? rounds[idx - 1] : null;
               const roundTypeOptions = Object.keys(ROUND_TYPE_LABELS).map(type =>
                 `<option value="${type}" ${type===round.round_type?'selected':''}>${formatRoundType(type)}</option>`
               ).join('');
@@ -1457,46 +1533,58 @@
               const scheduledLabel = round.scheduled_time
                 ? new Date(round.scheduled_time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
                 : 'Not scheduled';
+              const dis = !canEdit ? 'disabled' : '';
+              const disStyle = !canEdit ? 'background:#F3F2EF;color:#888;cursor:not-allowed;' : '';
+
+              // Previous round context box
+              const prevContext = prevRound && (prevRound.feedback || prevRound.notes) ? `
+                <div style="background:#EEF3F8;border-left:3px solid #0A66C2;border-radius:0 6px 6px 0;padding:9px 12px;margin-bottom:12px;">
+                  <div style="font-size:10px;font-weight:700;color:#0A66C2;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:5px;">Notes from Round ${prevRound.round_number} · ${escapeHtml(formatRoundType(prevRound.round_type))}</div>
+                  ${prevRound.feedback ? `<div style="font-size:12px;color:var(--li-text);margin-bottom:3px;"><strong>Post-round feedback:</strong> ${escapeHtml(prevRound.feedback)}</div>` : ''}
+                  ${prevRound.notes ? `<div style="font-size:12px;color:var(--li-text);"><strong>Pre-round notes:</strong> ${escapeHtml(prevRound.notes)}</div>` : ''}
+                </div>` : '';
 
               return `
                 <div class="round-item">
                   <!-- Round collapsed row -->
                   <div class="round-row" onclick="toggleRound('${round.id}')">
-                    <div style="width:22px;height:22px;border-radius:50%;background:#8B5CF6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">${round.round_number || '?'}</div>
+                    <div style="width:22px;height:22px;border-radius:50%;background:${isCompleted?'#057642':isCurrent?'#8B5CF6':'#9CA3AF'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;">${isCompleted?'✓':(round.round_number||'?')}</div>
                     <div style="flex:1;min-width:0;">
-                      <div style="font-weight:600;font-size:13px;">${escapeHtml(formatRoundType(round.round_type))}</div>
+                      <div style="font-weight:600;font-size:13px;">${escapeHtml(formatRoundType(round.round_type))}
+                        ${isCompleted ? '<span style="font-size:10px;font-weight:600;color:#057642;background:#F0FDF4;border-radius:10px;padding:1px 7px;margin-left:4px;">Done</span>' : isCurrent ? '<span style="font-size:10px;font-weight:600;color:#8B5CF6;background:#F5F3FF;border-radius:10px;padding:1px 7px;margin-left:4px;">Active</span>' : '<span style="font-size:10px;font-weight:600;color:#6B7280;background:#F3F2EF;border-radius:10px;padding:1px 7px;margin-left:4px;">Queued</span>'}
+                      </div>
                       <div style="font-size:11px;color:var(--li-muted);">${round.interviewer_name ? escapeHtml(round.interviewer_name) : 'No interviewer'} · ${scheduledLabel}</div>
                     </div>
                     ${renderDecisionPill(round.decision)}
-                    ${round.meeting_link ? `<a href="${escapeHtml(round.meeting_link)}" target="_blank" onclick="event.stopPropagation()" style="font-size:11px;color:#0A66C2;font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;">Join ↗</a>` : ''}
+                    ${round.meeting_link && !isCompleted ? `<button onclick='joinAndDebrief(event, ${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(round.meeting_link)})' style="font-size:11px;color:#0A66C2;font-weight:600;background:transparent;border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit;padding:0;">Join ↗</button>` : ''}
+                    ${canRemove ? `<button onclick='event.stopPropagation();deleteRound(${JSON.stringify(application.id)},${JSON.stringify(round.id)})' style="font-size:11px;color:#c0392b;background:transparent;border:none;cursor:pointer;flex-shrink:0;font-family:inherit;padding:0;" title="Remove round">✕</button>` : ''}
                     <span style="color:var(--li-muted);font-size:12px;flex-shrink:0;">▾</span>
                   </div>
                   <!-- Round expanded detail -->
                   <div id="round-body-${round.id}" class="round-row-body" style="display:none;">
-                    <div class="round-grid" style="margin-bottom:10px;">
+                    ${prevContext}
+                    ${round.meeting_link && round.scheduled_time ? `<div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#057642;">✓ Interview scheduled for ${new Date(round.scheduled_time).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}. Details sent to candidate.</div>` : ''}
+                    <div class="round-grid" style="margin-bottom:10px;${isCompleted?'opacity:0.75;':''}">
                       <div class="round-field">
                         <label>Round Type</label>
-                        <select id="round-type-${round.id}">${roundTypeOptions}</select>
+                        <select id="round-type-${round.id}" ${dis} style="${disStyle}">${roundTypeOptions}</select>
                       </div>
                       <div class="round-field">
                         <label>Interviewer Name</label>
-                        <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds"/>
+                        <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds" ${dis} style="${disStyle}"/>
                       </div>
                       <div class="round-field">
                         <label>Scheduled Time</label>
-                        <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}"/>
+                        <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}" ${dis} style="${disStyle}"/>
                       </div>
                       <!-- hidden decision field — driven by buttons below -->
                       <div style="display:none;"><select id="round-decision-${round.id}">${decisionOptions}</select></div>
                       <div class="round-field">
-                        <label>Pre-round Notes</label>
-                        <textarea id="round-notes-${round.id}" placeholder="Context for the interviewer going in">${escapeHtml(round.notes || '')}</textarea>
-                      </div>
-                      <div class="round-field">
-                        <label>Post-round Feedback</label>
-                        <textarea id="round-feedback-${round.id}" placeholder="Feedback after the interview">${escapeHtml(round.feedback || '')}</textarea>
+                        <label>Post-round Feedback${!isCompleted && round.meeting_link ? ' <span style="color:#0A66C2;font-size:10px;font-weight:700;">← fill after meeting</span>' : ''}</label>
+                        <textarea id="round-feedback-${round.id}" placeholder="Feedback after the interview" ${dis} style="${disStyle}">${escapeHtml(round.feedback || '')}</textarea>
                       </div>
                     </div>
+                    ${canEdit ? `
                     <div class="round-actions">
                       <button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save details</button>
                       <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✦ AI Pack</button>
@@ -1504,11 +1592,11 @@
                     </div>
                     <!-- Decision action buttons -->
                     <div style="border-top:1px solid var(--li-border);padding-top:12px;margin-top:4px;">
-                      <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Round Outcome — saves all fields above</div>
+                      <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Round Outcome — locks this round and saves all fields above</div>
                       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="decide-btn decide-advance ${round.decision==='advance'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "advance")'>✓ Extend offer</button>
-                        <button class="decide-btn decide-more ${round.decision==='more_round_required'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "more_round_required")'>↩ Another round needed</button>
-                        <button class="decide-btn decide-reject ${round.decision==='reject'?'decided':''}" onclick='showRejectPrompt(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✕ Not proceeding</button>
+                        <button class="decide-btn decide-advance" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "advance")'>✓ Extend offer</button>
+                        <button class="decide-btn decide-more" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "more_round_required")'>↩ Another round needed</button>
+                        <button class="decide-btn decide-reject" onclick='showRejectPrompt(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✕ Not proceeding</button>
                       </div>
                       <!-- Rejection reason prompt -->
                       <div id="reject-confirm-${round.id}" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-top:10px;">
@@ -1519,9 +1607,11 @@
                           <button onclick="document.getElementById('reject-confirm-${round.id}').style.display='none'" style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--li-border);background:#fff;color:var(--li-muted);">Cancel</button>
                         </div>
                       </div>
-                    </div>
-                    ${renderBriefPack(round.brief_pack)}
-                    ${renderQuestionPack(round.question_pack)}
+                    </div>` : isCompleted ? `
+                    <div style="padding:6px 0 2px;font-size:11px;color:#057642;font-weight:600;">✓ Round completed and locked.</div>` : `
+                    <div style="padding:6px 0 2px;font-size:11px;color:#6B7280;">Waiting for the previous round to be completed before this round becomes active.</div>`}
+                    ${renderBriefPack(round.brief_pack, round.id)}
+                    ${renderQuestionPack(round.question_pack, round.id)}
                   </div>
                 </div>
               `;
@@ -1698,7 +1788,6 @@
       interviewer_name: document.getElementById(`round-interviewer-${roundId}`).value.trim(),
       scheduled_time: document.getElementById(`round-time-${roundId}`).value || null,
       decision: decisionEl ? (decisionEl.value || null) : null,
-      notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
       feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
     };
     try {
@@ -1722,7 +1811,7 @@
     const btn = document.getElementById(`ai-pack-btn-${roundId}`);
     if (btn) {
       btn.disabled = true;
-      btn.textContent = 'Generating…';
+      btn.innerHTML = '<span class="btn-spin"></span>Generating…';
     }
     try {
       const res = await fetch(getBase()+`/interview-rounds/${roundId}/ai-pack`, { method:'POST' });
@@ -1739,7 +1828,7 @@
       const nextBtn = document.getElementById(`ai-pack-btn-${roundId}`);
       if (nextBtn) {
         nextBtn.disabled = false;
-        nextBtn.textContent = 'Generate AI Interview Pack';
+        nextBtn.innerHTML = '✦ AI Pack';
       }
     }
   }
@@ -1751,15 +1840,25 @@
     openScheduleModal();
   }
 
-  function scheduleFromRound(applicationId, roundId, candidateName, jobId) {
+  async function scheduleFromRound(applicationId, roundId, candidateName, jobId) {
     const round = (roundsByApplication[applicationId] || []).find(item => item.id === roundId) || {};
-    scheduleContext = { applicationId, roundId, roundType: round.round_type || null };
-    document.getElementById('s-candidate').value = candidateName;
-    document.getElementById('s-jobid').value = jobId;
-    document.getElementById('s-recruiter').value = round.interviewer_name || document.getElementById('s-recruiter').value || 'Sarah Reynolds';
-    document.getElementById('s-time').value = formatDateTimeLocal(round.scheduled_time);
-    document.getElementById('int-result').classList.remove('show');
-    openScheduleModal();
+    const timeEl = document.getElementById(`round-time-${roundId}`);
+    const time = timeEl ? timeEl.value : '';
+    if (!time) { showToast('Please enter a scheduled time first.'); return; }
+    const interviewerEl = document.getElementById(`round-interviewer-${roundId}`);
+    const recruiter = (interviewerEl ? interviewerEl.value.trim() : '') || 'Sarah Reynolds';
+    try {
+      const payload = {
+        candidate: candidateName, recruiter, interviewer_name: recruiter,
+        time, job_id: jobId, application_id: applicationId,
+        round_id: roundId, round_type: round.round_type || null,
+      };
+      const res = await fetch(getBase()+'/schedule', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error();
+      showToast('Interview scheduled! Details sent to candidate.');
+      loadInterviews();
+      await loadApplicants();
+    } catch(e) { showToast('Could not schedule interview.'); }
   }
 
   function avatarColor(name){
