@@ -1427,17 +1427,21 @@
     return `<span class="decision-pill" style="${DECISION_STYLES[decision] || 'background:#EEF3F8;color:#0A66C2;'}">${DECISION_LABELS[decision] || decision}</span>`;
   }
 
-  function renderBriefPack(rawPack, roundId) {
+  function renderBriefPack(rawPack, roundId, roundIdx) {
     const pack = parseJsonSafe(rawPack);
     if (!pack) return '';
     const key = `${roundId}-brief`;
     const isOpen = expandedAiSections.has(key);
     const highlights = Array.isArray(pack.resume_highlights) ? pack.resume_highlights : [];
     const gaps = Array.isArray(pack.gaps_to_probe) ? pack.gaps_to_probe : [];
+    const isInherited = (roundIdx || 0) > 0;
     return `
       <div class="round-ai-box" style="padding:0;">
         <div onclick="toggleAiSection('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;">
-          <div class="round-ai-title" style="margin:0;">✦ AI Interview Brief</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div class="round-ai-title" style="margin:0;">✦ AI Interview Brief</div>
+            ${isInherited ? '<span style="font-size:10px;font-weight:600;color:#9CA3AF;background:#F3F2EF;border-radius:8px;padding:1px 6px;">from Round 1</span>' : ''}
+          </div>
           <span id="ai-icon-${key}" style="font-size:11px;color:var(--li-muted);">${isOpen ? '▲' : '▼'}</span>
         </div>
         <div id="ai-section-${key}" style="display:${isOpen ? '' : 'none'};padding:0 14px 12px;border-top:1px solid var(--li-border);">
@@ -1456,14 +1460,15 @@
     `;
   }
 
-  function renderQuestionPack(rawQuestions, roundId) {
+  function renderQuestionPack(rawQuestions, roundId, roundNum) {
     if (!rawQuestions) return '';
     const key = `${roundId}-questions`;
     const isOpen = expandedAiSections.has(key);
+    const title = roundNum > 1 ? `Round ${roundNum} Questions` : 'Round 1 Questions';
     return `
       <div class="round-ai-box" style="padding:0;">
         <div onclick="toggleAiSection('${key}')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;">
-          <div class="round-ai-title" style="margin:0;">Candidate-Specific Questions</div>
+          <div class="round-ai-title" style="margin:0;">${title}</div>
           <span id="ai-icon-${key}" style="font-size:11px;color:var(--li-muted);">${isOpen ? '▲' : '▼'}</span>
         </div>
         <div id="ai-section-${key}" style="display:${isOpen ? '' : 'none'};padding:0 14px 12px;border-top:1px solid var(--li-border);">
@@ -1589,7 +1594,7 @@
                     ${canEdit ? `
                     <div class="round-actions">
                       <button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save details</button>
-                      <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✦ AI Pack</button>
+                      <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>${idx === 0 ? '✦ AI Pack' : '✦ Generate Questions'}</button>
                       <button class="round-btn primary" onclick='scheduleFromRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(application.candidate_name || application.user_identifier)}, ${JSON.stringify(application.job_id)})'>Schedule</button>
                     </div>
                     <!-- Decision action buttons -->
@@ -1612,8 +1617,8 @@
                     </div>` : isCompleted ? `
                     <div style="padding:6px 0 2px;font-size:11px;color:#057642;font-weight:600;">✓ Round completed and locked.</div>` : `
                     <div style="padding:6px 0 2px;font-size:11px;color:#6B7280;">Waiting for the previous round to be completed before this round becomes active.</div>`}
-                    ${renderBriefPack(round.brief_pack, round.id)}
-                    ${renderQuestionPack(round.question_pack, round.id)}
+                    ${renderBriefPack(round.brief_pack, round.id, idx)}
+                    ${renderQuestionPack(round.question_pack, round.id, round.round_number || (idx + 1))}
                   </div>
                 </div>
               `;

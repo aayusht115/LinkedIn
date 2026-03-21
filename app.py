@@ -528,13 +528,27 @@ def generate_round_ai_pack_route(round_id):
         return jsonify({"error": "Job not found"}), 404
 
     profile = _profile_for_application(application)
-    all_rounds = get_interview_rounds_by_application(round_row["application_id"])
+    all_rounds = sorted(
+        get_interview_rounds_by_application(round_row["application_id"]),
+        key=lambda x: x.get("round_number") or 0
+    )
+
+    # Collect previous round feedback (most recent finalized round)
     prev_feedback = None
-    for r in sorted(all_rounds, key=lambda x: x.get("round_number") or 0):
+    for r in all_rounds:
         if r["id"] != round_id and r.get("finalized_at") and r.get("feedback"):
             prev_feedback = r["feedback"]
+
+    # Reuse brief_pack from round 1 if it already exists; only generate on first run
+    existing_brief = None
+    for r in all_rounds:
+        if r["id"] != round_id and r.get("brief_pack"):
+            raw = r["brief_pack"]
+            existing_brief = raw if isinstance(raw, dict) else __import__("json").loads(raw)
+            break  # earliest round wins
+
     from summarizer import generate_round_brief_pack, generate_candidate_interview_questions
-    brief_pack = generate_round_brief_pack(profile, job, application, round_row)
+    brief_pack = existing_brief if existing_brief else generate_round_brief_pack(profile, job, application, round_row)
     questions = generate_candidate_interview_questions(profile, job, application, round_row, previous_feedback=prev_feedback)
     updated = update_interview_round(round_id, {
         "objective": brief_pack.get("round_objective") or round_row.get("objective"),
