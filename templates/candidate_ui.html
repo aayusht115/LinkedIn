@@ -636,10 +636,34 @@
     });
 
     if (isRejected) {
-      return `<div style="display:flex;align-items:flex-start;gap:0;padding:6px 0 2px;overflow-x:auto;">${dots.join('')}</div>
-        <div style="font-size:10px;color:#c0392b;font-weight:600;margin-top:2px;">Application closed</div>`;
+      return `<div style="display:flex;align-items:flex-start;gap:0;padding:6px 0 2px;overflow-x:auto;">${dots.join('')}</div>`;
     }
     return `<div style="display:flex;align-items:flex-start;gap:0;padding:6px 0 2px;overflow-x:auto;">${dots.join('')}</div>`;
+  }
+
+  async function acceptOffer(appId) {
+    try {
+      const res = await fetch(getBase()+`/applications/${appId}/candidate-decision`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ decision: 'accepted' })
+      });
+      if (!res.ok) throw new Error();
+      showToast('Offer accepted! Congratulations 🎉');
+      showApplied();
+    } catch(e) { showToast('Could not process decision.'); }
+  }
+
+  async function declineOffer(appId) {
+    if (!confirm('Are you sure you want to decline this offer?')) return;
+    try {
+      const res = await fetch(getBase()+`/applications/${appId}/candidate-decision`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ decision: 'declined' })
+      });
+      if (!res.ok) throw new Error();
+      showToast('Offer declined.');
+      showApplied();
+    } catch(e) { showToast('Could not process decision.'); }
   }
 
   async function showApplied() {
@@ -651,20 +675,44 @@
       const res = await fetch(getBase()+'/applications?user='+CANDIDATE_ID);
       const apps = await res.json();
       if(apps.length===0){ list.innerHTML='<div style="padding:8px;font-size:13px;color:var(--li-muted);">No applications yet.</div>'; return; }
-      list.innerHTML = apps.map(a=>`
-        <div style="padding:10px 0;border-bottom:1px solid var(--li-border);">
-          <a href="/job/${a.job_id}" style="text-decoration:none;color:inherit;display:flex;gap:10px;align-items:flex-start;">
-            <div class="job-logo">${a.logo||a.company.slice(0,2).toUpperCase()}</div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
-              <div style="font-size:12px;color:var(--li-muted);">${a.company} · ${a.work_type||''}</div>
+      list.innerHTML = apps.map(a=>{
+        const offerCard = a.status === 'offer' ? `
+          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-top:8px;">
+            <div style="font-size:12px;font-weight:700;color:#057642;margin-bottom:6px;">You have a job offer!</div>
+            ${a.offer_due_date ? `<div style="font-size:11px;color:var(--li-muted);margin-bottom:8px;">Please respond by <strong>${new Date(a.offer_due_date).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</strong></div>` : ''}
+            <div style="display:flex;gap:8px;">
+              <button onclick="acceptOffer('${a.id}')" style="flex:1;padding:8px;border-radius:20px;border:none;background:#057642;color:#fff;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">Accept Offer</button>
+              <button onclick="declineOffer('${a.id}')" style="flex:1;padding:8px;border-radius:20px;border:1.5px solid #c0392b;background:#fff;color:#c0392b;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;">Decline</button>
             </div>
-          </a>
-          <div style="margin-top:8px;padding-left:4px;">
-            ${renderCandidateStageTrack(a.status)}
+          </div>` : '';
+
+        const hiredCard = a.status === 'hired' ? `
+          <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:10px 12px;margin-top:8px;">
+            <div style="font-size:13px;font-weight:700;color:#057642;">Congratulations! You're hired 🎉</div>
+          </div>` : '';
+
+        const rejectedCard = a.status === 'rejected' ? `
+          <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-top:8px;">
+            <div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:${a.rejection_reason?'5px':'0'};">Application closed</div>
+            ${a.rejection_reason ? `<div style="font-size:12px;color:#7f1d1d;line-height:1.5;">${a.rejection_reason.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : ''}
+          </div>` : '';
+
+        return `
+          <div style="padding:10px 0;border-bottom:1px solid var(--li-border);">
+            <a href="/job/${a.job_id}" style="text-decoration:none;color:inherit;display:flex;gap:10px;align-items:flex-start;">
+              <div class="job-logo">${a.logo||a.company.slice(0,2).toUpperCase()}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.title}</div>
+                <div style="font-size:12px;color:var(--li-muted);">${a.company} · ${a.work_type||''}</div>
+              </div>
+            </a>
+            <div style="margin-top:8px;padding-left:4px;">
+              ${renderCandidateStageTrack(a.status)}
+            </div>
+            ${offerCard}${hiredCard}${rejectedCard}
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     } catch(e){ list.innerHTML='<div style="padding:8px;font-size:13px;color:#c0392b;">Could not load.</div>'; }
   }
 

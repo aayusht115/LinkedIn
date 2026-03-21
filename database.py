@@ -287,6 +287,9 @@ def init_db():
     _ensure_column(conn, "candidate_profiles", "one_liner", "TEXT")
     _ensure_column(conn, "candidate_profiles", "profile_sync_note", "TEXT")
     _ensure_column(conn, "candidate_profiles", "profile_sync_status", "TEXT")
+    _ensure_column(conn, "applications", "rejection_reason", "TEXT")
+    _ensure_column(conn, "applications", "offer_due_date", "TEXT")
+    _ensure_column(conn, "applications", "candidate_decision", "TEXT")
 
     conn.commit()
     _seed_recruiters(conn)
@@ -711,6 +714,7 @@ def get_applications_by_user(user_identifier="candidate_default"):
     rows = conn.execute("""
         SELECT a.id, a.job_id, a.user_identifier, a.status, a.cover_note, a.ai_score,
                a.ai_analysis, a.recruiter_notes, a.screening_note, a.resume_filename,
+               a.rejection_reason, a.offer_due_date, a.candidate_decision,
                a.applied_at, a.updated_at,
                j.title, j.company, j.logo, j.work_type, j.location, j.status as job_status,
                r.name as recruiter_name
@@ -728,6 +732,7 @@ def get_applications_by_job(job_id):
     rows = conn.execute("""
         SELECT a.id, a.job_id, a.user_identifier, a.status, a.cover_note, a.ai_score,
                a.ai_analysis, a.recruiter_notes, a.screening_note, a.resume_filename,
+               a.rejection_reason, a.offer_due_date, a.candidate_decision,
                a.applied_at, a.updated_at,
                cp.name as candidate_name, cp.headline, cp.one_liner, cp.location as candidate_location,
                cp.skills as candidate_skills, cp.experience as candidate_experience,
@@ -773,6 +778,44 @@ def update_application_notes(application_id, recruiter_notes):
         SET recruiter_notes = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
     """, (recruiter_notes, application_id))
+    conn.commit()
+    row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def update_application_offer(application_id, offer_due_date=None, rejection_reason=None, status=None):
+    """Set offer due date, rejection reason, or status on an application."""
+    conn = get_connection()
+    updates = ["updated_at = CURRENT_TIMESTAMP"]
+    values = []
+    if offer_due_date is not None:
+        updates.append("offer_due_date = ?")
+        values.append(offer_due_date)
+    if rejection_reason is not None:
+        updates.append("rejection_reason = ?")
+        values.append(rejection_reason)
+    if status is not None:
+        updates.append("status = ?")
+        values.append(status)
+    if values:
+        conn.execute(
+            f"UPDATE applications SET {', '.join(updates)} WHERE id = ?",
+            (*values, application_id),
+        )
+        conn.commit()
+    row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def update_application_candidate_decision(application_id, decision):
+    """Record candidate's accept/decline on an offer and update status."""
+    new_status = "hired" if decision == "accepted" else "rejected"
+    conn = get_connection()
+    conn.execute("""
+        UPDATE applications
+        SET candidate_decision = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (decision, new_status, application_id))
     conn.commit()
     row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
     conn.close()

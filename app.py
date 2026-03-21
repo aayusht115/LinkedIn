@@ -21,6 +21,7 @@ from database import (
     get_candidate_profile, upsert_candidate_profile, save_candidate_resume, update_candidate_sync,
     apply_to_job, get_application, has_applied, get_applications_by_user, get_applications_by_job,
     update_application_status, get_application_by_id, update_application_ai, update_application_notes,
+    update_application_offer, update_application_candidate_decision,
     create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round,
 )
 
@@ -366,6 +367,26 @@ def save_app_notes(application_id):
         return jsonify({"error": "Application not found"}), 404
     return jsonify(app_row)
 
+@app.route("/applications/<application_id>/offer", methods=["PATCH"])
+def update_offer_route(application_id):
+    data = request.json or {}
+    offer_due_date = (data.get("offer_due_date") or "").strip() or None
+    result = update_application_offer(application_id, offer_due_date=offer_due_date)
+    if not result:
+        return jsonify({"error": "Application not found"}), 404
+    return jsonify(result)
+
+@app.route("/applications/<application_id>/candidate-decision", methods=["PATCH"])
+def candidate_decision_route(application_id):
+    data = request.json or {}
+    decision = (data.get("decision") or "").strip().lower()
+    if decision not in ("accepted", "declined"):
+        return jsonify({"error": "decision must be 'accepted' or 'declined'"}), 400
+    result = update_application_candidate_decision(application_id, decision)
+    if not result:
+        return jsonify({"error": "Application not found"}), 404
+    return jsonify(result)
+
 @app.route("/applications/<application_id>/rounds", methods=["GET"])
 def application_rounds(application_id):
     application = get_application_by_id(application_id)
@@ -420,16 +441,16 @@ def update_round_route(round_id):
         if data["round_number"] < 1:
             return jsonify({"error": "round_number must be at least 1"}), 400
 
+    rejection_reason = (data.pop("rejection_reason", None) or "").strip() or None
     updated = update_interview_round(round_id, data)
     decision = (data.get("decision") or "").strip().lower()
     if updated and decision:
         if decision == "reject":
-            update_application_status(updated["application_id"], "rejected")
+            update_application_offer(updated["application_id"], rejection_reason=rejection_reason, status="rejected")
         elif decision == "more_round_required":
             update_application_status(updated["application_id"], "final_round")
         elif decision == "advance":
-            next_status = "offer" if updated.get("round_type") in {"manager_round", "final_panel", "hr_round"} else "interview"
-            update_application_status(updated["application_id"], next_status)
+            update_application_status(updated["application_id"], "offer")
     return jsonify(updated)
 
 @app.route("/interview-rounds/<round_id>/brief-pack", methods=["POST"])

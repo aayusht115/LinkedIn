@@ -1268,7 +1268,19 @@
     }
   }
 
-  async function decideRound(applicationId, roundId, decision) {
+  function showRejectPrompt(applicationId, roundId) {
+    const div = document.getElementById(`reject-confirm-${roundId}`);
+    if (div) div.style.display = div.style.display === 'none' ? '' : 'none';
+  }
+
+  async function confirmRejection(applicationId, roundId) {
+    const reasonEl = document.getElementById(`reject-reason-${roundId}`);
+    const reason = reasonEl ? reasonEl.value.trim() : '';
+    if (!reason) { showToast('Please enter a rejection reason — it will be shared with the candidate.'); return; }
+    await decideRound(applicationId, roundId, 'reject', reason);
+  }
+
+  async function decideRound(applicationId, roundId, decision, rejectionReason) {
     const payload = {
       round_type: document.getElementById(`round-type-${roundId}`).value,
       interviewer_name: document.getElementById(`round-interviewer-${roundId}`).value.trim(),
@@ -1277,14 +1289,50 @@
       notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
       feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
     };
+    if (rejectionReason) payload.rejection_reason = rejectionReason;
     try {
       const res = await fetch(getBase()+`/interview-rounds/${roundId}`, {
         method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error();
-      await loadApplicants();
-      showToast(decision === 'advance' ? '✓ Advanced to next stage' : decision === 'reject' ? '✕ Application closed' : '↩ Another round added to queue');
+
+      if (decision === 'more_round_required') {
+        // Auto-add next round and open it for scheduling
+        const rndRes = await fetch(getBase()+`/applications/${applicationId}/rounds`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ round_type: nextRoundType(applicationId) })
+        });
+        if (!rndRes.ok) throw new Error();
+        const newRound = await rndRes.json();
+        syncRounds(applicationId, [...(roundsByApplication[applicationId] || []), newRound]);
+        expandedCards.add(applicationId);
+        expandedRounds.add(newRound.id);
+        renderApplicants();
+        setTimeout(() => {
+          const el = document.getElementById(`round-body-${newRound.id}`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 80);
+        showToast('↩ Next round queued — schedule it below');
+      } else {
+        await loadApplicants();
+        showToast(decision === 'advance' ? '✓ Offer extended to candidate' : '✕ Application closed — reason sent to candidate');
+      }
     } catch(e) { showToast('Could not save decision.'); }
+  }
+
+  async function setOfferDueDate(applicationId) {
+    const val = document.getElementById(`offer-due-${applicationId}`).value;
+    try {
+      const res = await fetch(getBase()+`/applications/${applicationId}/offer`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ offer_due_date: val })
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      const app = allApplicants.find(a => a.id === applicationId);
+      if (app) app.offer_due_date = updated.offer_due_date;
+      showToast('Offer due date saved.');
+    } catch(e) { showToast('Could not save due date.'); }
   }
 
   function renderStageTrack(application) {
@@ -1458,9 +1506,18 @@
                     <div style="border-top:1px solid var(--li-border);padding-top:12px;margin-top:4px;">
                       <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Round Outcome — saves all fields above</div>
                       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="decide-btn decide-advance ${round.decision==='advance'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "advance")'>✓ Advance to next stage</button>
+                        <button class="decide-btn decide-advance ${round.decision==='advance'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "advance")'>✓ Extend offer</button>
                         <button class="decide-btn decide-more ${round.decision==='more_round_required'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "more_round_required")'>↩ Another round needed</button>
-                        <button class="decide-btn decide-reject ${round.decision==='reject'?'decided':''}" onclick='decideRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, "reject")'>✕ Not proceeding</button>
+                        <button class="decide-btn decide-reject ${round.decision==='reject'?'decided':''}" onclick='showRejectPrompt(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>✕ Not proceeding</button>
+                      </div>
+                      <!-- Rejection reason prompt -->
+                      <div id="reject-confirm-${round.id}" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 12px;margin-top:10px;">
+                        <div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:5px;">Rejection reason (required — shared with candidate)</div>
+                        <textarea id="reject-reason-${round.id}" style="width:100%;border:1px solid #FECACA;border-radius:4px;padding:8px;font-size:12px;font-family:inherit;resize:vertical;min-height:56px;outline:none;" placeholder="e.g. Strong candidate but the role requires deeper experience in X…"></textarea>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                          <button class="decide-btn decide-reject" style="flex:1;" onclick='confirmRejection(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Confirm &amp; send rejection</button>
+                          <button onclick="document.getElementById('reject-confirm-${round.id}').style.display='none'" style="padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:1px solid var(--li-border);background:#fff;color:var(--li-muted);">Cancel</button>
+                        </div>
                       </div>
                     </div>
                     ${renderBriefPack(round.brief_pack)}
@@ -1527,6 +1584,27 @@
           <!-- EXPANDED BODY — hidden by default -->
           <div class="app-body" id="app-body-${a.id}" style="display:none;">
             ${renderStageTrack(a)}
+            ${a.status === 'offer' ? `
+              <div class="app-section" style="background:#F0FDF4;border-left:3px solid #057642;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                  <span style="font-size:13px;font-weight:700;color:#057642;">Offer Extended</span>
+                  ${a.candidate_decision ? `<span style="background:${a.candidate_decision==='accepted'?'#057642':'#c0392b'};color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;">${a.candidate_decision==='accepted'?'Accepted ✓':'Declined ✕'}</span>` : '<span style="background:#F59E0B;color:#fff;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;">Awaiting response</span>'}
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <label style="font-size:12px;font-weight:600;color:var(--li-muted);">Response due by:</label>
+                  <input type="date" id="offer-due-${a.id}" value="${a.offer_due_date||''}" style="border:1px solid #BBF7D0;border-radius:4px;padding:4px 8px;font-size:12px;font-family:inherit;outline:none;">
+                  <button onclick="setOfferDueDate('${a.id}')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #057642;background:#fff;color:#057642;">Save date</button>
+                </div>
+              </div>` : ''}
+            ${a.status === 'hired' ? `
+              <div class="app-section" style="background:#F0FDF4;border-left:3px solid #057642;">
+                <div style="font-size:13px;font-weight:700;color:#057642;">Hired! Offer accepted by candidate.</div>
+              </div>` : ''}
+            ${a.status === 'rejected' && a.rejection_reason ? `
+              <div class="app-section" style="background:#FEF2F2;border-left:3px solid #c0392b;">
+                <div style="font-size:10px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">Rejection reason shared with candidate</div>
+                <div style="font-size:12px;color:var(--li-text);">${escapeHtml(a.rejection_reason)}</div>
+              </div>` : ''}
             ${a.cover_note ? `
               <div class="app-section" style="background:#FAFAF8;">
                 <div style="font-size:10px;font-weight:700;color:var(--li-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Cover note</div>
