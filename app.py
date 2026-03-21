@@ -22,6 +22,7 @@ from database import (
     apply_to_job, get_application, has_applied, get_applications_by_user, get_applications_by_job,
     update_application_status, get_application_by_id, update_application_ai, update_application_notes,
     update_application_offer, update_application_candidate_decision, save_process_feedback,
+    update_applications_resume_for_user,
     create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round, delete_interview_round,
     delete_interview_round,
 )
@@ -212,8 +213,6 @@ def get_profile():
 def save_profile():
     data = request.json or {}
     data.setdefault("user_identifier", "candidate_default")
-    if data["user_identifier"] == "candidate_default" and not (data.get("name") or "").strip():
-        data["name"] = "Aayush Thakur"
     if not (data.get("one_liner") or "").strip():
         data["one_liner"] = (data.get("headline") or "").strip()
     existing = get_candidate_profile(data["user_identifier"]) or {}
@@ -240,23 +239,25 @@ def upload_resume():
 
     existing = get_candidate_profile(user) or {"user_identifier": user}
     inferred = fallback_profile_from_resume(resume_text, existing)
+    # Name is never auto-filled from resume — only preserve existing or let user enter it
+    kept_name = existing.get("name") or ""
     generated_bio = existing.get("bio") or quick_bio_from_profile({
         **existing,
-        "name": inferred.get("name") or existing.get("name"),
+        "name": kept_name,
         "headline": inferred.get("headline") or existing.get("headline"),
         "location": inferred.get("location") or existing.get("location"),
         "skills": ",".join(inferred.get("skills") or []) or existing.get("skills") or "",
     })
     profile_payload = {
         "user_identifier": user,
-        "name": inferred.get("name") or existing.get("name") or ("Aayush Thakur" if user == "candidate_default" else ""),
+        "name": kept_name,
         "headline": inferred.get("headline") or existing.get("headline") or "",
         "one_liner": inferred.get("one_liner") or existing.get("one_liner") or inferred.get("headline") or "",
         "location": inferred.get("location") or existing.get("location") or "",
         "bio": generated_bio or existing.get("bio") or "",
         "skills": ",".join(inferred.get("skills") or []) or existing.get("skills") or "",
-        "experience": json.dumps(inferred.get("experience") or []),
-        "education": json.dumps(inferred.get("education") or []),
+        "experience": json.dumps(inferred["experience"]) if inferred.get("experience") else (existing.get("experience") or "[]"),
+        "education": json.dumps(inferred["education"]) if inferred.get("education") else (existing.get("education") or "[]"),
     }
     sync = profile_resume_sync(profile_payload, resume_text)
     profile_payload["profile_sync_note"] = sync["note"]
@@ -270,6 +271,13 @@ def upload_resume():
         sync["note"],
         sync["status"],
     )
+    # Sync updated profile + resume across all existing applications
+    update_applications_resume_for_user(
+        user,
+        json.dumps(profile),
+        original_name,
+        resume_text,
+    )
     return jsonify({
         "profile": profile,
         "resume_filename": profile.get("resume_filename"),
@@ -278,6 +286,7 @@ def upload_resume():
         "resume_text_preview": (profile.get("resume_text") or "")[:500],
         "autofilled": True,
         "used_ai": False,
+        "name_missing": not bool(kept_name),
     }), 201
 
 @app.route("/profile/ai-bio", methods=["POST"])

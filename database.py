@@ -1019,3 +1019,14 @@ def save_process_feedback(application_id, process_feedback, process_rating):
     app_row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
     conn.close()
     return dict(app_row) if app_row else None
+
+def update_applications_resume_for_user(user_identifier, profile_snapshot, resume_filename, resume_text):
+    """Sync updated resume + profile snapshot across all existing applications for a user."""
+    conn = get_connection()
+    conn.execute("""
+        UPDATE applications
+        SET profile_snapshot = ?, resume_filename = ?, resume_text = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE user_identifier = ?
+    """, (profile_snapshot, resume_filename, resume_text, user_identifier))
+    conn.commit()
+    conn.close()

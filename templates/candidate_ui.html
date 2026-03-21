@@ -192,11 +192,32 @@
       <div class="profile-banner"></div>
       <div class="profile-avatar" id="candidate-avatar">JT</div>
       <div class="profile-info">
-        <div class="profile-name" id="candidate-name">Jamie Torres</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+          <div class="profile-name" id="candidate-name">Jamie Torres</div>
+          <span id="edit-name-btn" onclick="event.stopPropagation();showNameEdit()" title="Edit name" style="cursor:pointer;color:#0A66C2;font-size:11px;opacity:0.7;flex-shrink:0;">✎</span>
+        </div>
+        <div id="name-edit-row" style="display:none;padding:4px 8px;" onclick="event.stopPropagation()">
+          <input id="name-edit-input" type="text" placeholder="Enter your full name" style="width:100%;border:1.5px solid #0A66C2;border-radius:8px;padding:5px 8px;font-size:12px;font-family:inherit;box-sizing:border-box;"/>
+          <div style="display:flex;gap:6px;margin-top:5px;">
+            <button onclick="saveNameEdit()" style="flex:1;background:#0A66C2;color:#fff;border:none;border-radius:8px;padding:5px 0;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">Save</button>
+            <button onclick="hideNameEdit()" style="flex:1;background:#eee;color:#333;border:none;border-radius:8px;padding:5px 0;font-size:11px;cursor:pointer;font-family:inherit;">Cancel</button>
+          </div>
+        </div>
         <div class="profile-title" id="candidate-headline">Senior Frontend Engineer</div>
         <div class="profile-location" id="candidate-location">London</div>
-        <div class="profile-bio-preview" id="candidate-bio">Open your profile to add your full background, experience, and education.</div>
         <div class="profile-link-row"><span class="profile-link-btn">View full profile →</span></div>
+      <div style="padding:8px 16px 4px;" onclick="event.stopPropagation()">
+        <input type="file" id="sidebar-resume-input" accept=".pdf" style="display:none;" onchange="uploadSidebarResume(this)"/>
+        <button onclick="document.getElementById('sidebar-resume-input').click()" style="width:100%;background:#EEF3F8;color:#0A66C2;border:1.5px solid #0A66C2;border-radius:20px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+          ↑ Update Resume
+        </button>
+        <div id="sidebar-resume-status" style="font-size:11px;color:var(--li-muted);margin-top:5px;text-align:center;min-height:14px;"></div>
+        <div id="name-prompt-box" style="display:none;margin-top:8px;background:#FFF7E6;border:1px solid #f0a500;border-radius:8px;padding:8px 10px;" onclick="event.stopPropagation()">
+          <div style="font-size:11px;font-weight:600;color:#7a5200;margin-bottom:5px;">What's your name?</div>
+          <input id="name-prompt-input" type="text" placeholder="Full name" style="width:100%;border:1.5px solid #f0a500;border-radius:8px;padding:5px 8px;font-size:12px;font-family:inherit;box-sizing:border-box;"/>
+          <button onclick="saveNameFromPrompt()" style="width:100%;margin-top:6px;background:#0A66C2;color:#fff;border:none;border-radius:8px;padding:6px 0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Save Name</button>
+        </div>
+      </div>
       </div>
       <div class="profile-stats">
         <div class="stat-row"><span>Profile viewers</span><span class="stat-num">89</span></div>
@@ -911,17 +932,90 @@
     const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() || 'JT';
     document.getElementById('candidate-avatar').textContent = initials;
     document.getElementById('candidate-name').textContent = name;
-    document.getElementById('candidate-headline').textContent = candidateProfile.headline || 'Build out your headline in your profile';
+    const headline = candidateProfile.headline || 'Build out your headline in your profile';
+    document.getElementById('candidate-headline').textContent = headline;
     document.getElementById('candidate-location').textContent = candidateProfile.location || 'Add your location';
 
-    const experienceEntries = (() => {
-      try { return JSON.parse(candidateProfile.experience || '[]'); } catch { return []; }
-    })();
-    const oneLiner = candidateProfile.one_liner
-      || (experienceEntries[0] ? `${experienceEntries[0].title || 'Experience'} at ${experienceEntries[0].company || 'company'}` : '')
-      || candidateProfile.bio
-      || 'Add a one-line intro in your profile for a cleaner preview here.';
-    document.getElementById('candidate-bio').textContent = oneLiner;
+  }
+
+  async function uploadSidebarResume(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const status = document.getElementById('sidebar-resume-status');
+    status.textContent = 'Uploading…';
+    status.style.color = 'var(--li-muted)';
+    const formData = new FormData();
+    formData.append('resume', file);
+    formData.append('user', CANDIDATE_ID);
+    try {
+      const res = await fetch(getBase() + '/profile/resume', { method: 'POST', body: formData });
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Upload failed'); }
+      const data = await res.json();
+      const p = data.profile || {};
+      renderCandidatePreview(p);
+      if (data.name_missing) {
+        status.textContent = '✓ Resume uploaded — please enter your name below';
+        status.style.color = '#7a5200';
+        document.getElementById('name-prompt-box').style.display = '';
+        document.getElementById('name-prompt-input').focus();
+      } else {
+        status.textContent = '✓ Resume updated & synced across all applications';
+        status.style.color = '#057642';
+        setTimeout(() => { status.textContent = ''; }, 4000);
+      }
+    } catch(e) {
+      status.textContent = e.message || 'Upload failed';
+      status.style.color = '#c0392b';
+    }
+    input.value = '';
+  }
+
+  async function saveNameFromPrompt() {
+    const nameVal = document.getElementById('name-prompt-input').value.trim();
+    if (!nameVal) return;
+    await _saveName(nameVal);
+    document.getElementById('name-prompt-box').style.display = 'none';
+    const status = document.getElementById('sidebar-resume-status');
+    status.textContent = '✓ Resume updated & synced across all applications';
+    status.style.color = '#057642';
+    setTimeout(() => { status.textContent = ''; }, 4000);
+  }
+
+  function showNameEdit() {
+    const current = document.getElementById('candidate-name').textContent;
+    document.getElementById('name-edit-input').value = (current === 'Jamie Torres' ? '' : current);
+    document.getElementById('name-edit-row').style.display = '';
+    document.getElementById('name-edit-input').focus();
+  }
+
+  function hideNameEdit() {
+    document.getElementById('name-edit-row').style.display = 'none';
+  }
+
+  async function saveNameEdit() {
+    const nameVal = document.getElementById('name-edit-input').value.trim();
+    if (!nameVal) return;
+    await _saveName(nameVal);
+    hideNameEdit();
+  }
+
+  async function _saveName(name) {
+    try {
+      const res = await fetch(getBase() + '/profile/data', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ user_identifier: CANDIDATE_ID, name }),
+      });
+      if (res.ok) {
+        const p = await res.json();
+        renderCandidatePreview(p.profile || p);
+      }
+    } catch(e) {
+      // silently fail — name will update on next page load
+      document.getElementById('candidate-name').textContent = name;
+      const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      document.getElementById('candidate-avatar').textContent = initials || '?';
+    }
   }
 
   async function loadProfileSkills(){

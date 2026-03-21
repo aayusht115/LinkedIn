@@ -184,32 +184,48 @@
     .timeline-top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
     .timeline-title{font-size:12px;font-weight:700;color:#5F5E5A;text-transform:uppercase;letter-spacing:0.04em;}
     .timeline-btn{font-size:11px;font-weight:700;padding:5px 10px;border-radius:18px;border:1px solid #8B5CF6;background:#F8F4FF;color:#8B5CF6;cursor:pointer;font-family:inherit;}
+    .timeline-btn:disabled{cursor:not-allowed;opacity:0.55;}
     .timeline-empty{font-size:12px;color:var(--li-muted);padding:10px 12px;border:1px dashed var(--li-border);border-radius:8px;background:#FAFAF8;}
+    .timeline-helper{font-size:11px;color:var(--li-muted);}
     .round-card{position:relative;padding-left:26px;margin-top:12px;}
     .round-card:before{content:'';position:absolute;left:8px;top:18px;bottom:-16px;width:2px;background:#E4E2DD;}
     .round-card:last-child:before{display:none;}
     .round-dot{position:absolute;left:0;top:16px;width:18px;height:18px;border-radius:50%;background:#8B5CF6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;box-shadow:0 0 0 4px #F3F2EF;}
     .round-panel{border:1px solid var(--li-border);border-radius:10px;padding:12px;background:#fff;}
+    .round-card.is-active .round-dot{background:#0A66C2;}
+    .round-card.is-completed .round-dot{background:#057642;}
+    .round-card.is-pending .round-dot{background:#9AA0A6;color:#fff;}
+    .round-panel.is-active{border-color:#BFD8F4;box-shadow:inset 0 0 0 1px #E8F0FE;}
+    .round-panel.is-completed{border-color:#B7DEC5;background:#F7FBF8;}
+    .round-panel.is-pending{background:#FAFAF8;border-color:#E4E2DD;opacity:0.82;}
     .round-panel-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px;}
     .round-name{font-weight:700;font-size:13px;}
     .round-sub{font-size:11px;color:var(--li-muted);margin-top:2px;line-height:1.4;}
+    .round-state-pill{display:inline-block;padding:3px 9px;border-radius:14px;font-size:10px;font-weight:700;}
+    .round-state-pill.active{background:#E8F0FE;color:#0A66C2;}
+    .round-state-pill.completed{background:#E8F5EE;color:#057642;}
+    .round-state-pill.pending{background:#F1EFE8;color:#5F5E5A;}
     .round-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px;}
     .round-field label{display:block;font-size:11px;font-weight:700;color:var(--li-muted);margin-bottom:4px;}
     .round-field input,.round-field select,.round-field textarea{width:100%;border:1px solid var(--li-border);border-radius:6px;padding:7px 9px;font-family:inherit;font-size:12px;background:#fff;}
+    .round-field input:disabled,.round-field select:disabled,.round-field textarea:disabled{background:#F3F2EF;color:#7A7976;cursor:not-allowed;}
     .round-field textarea{min-height:68px;resize:vertical;}
     .round-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
     .round-btn{font-size:11px;font-weight:700;padding:5px 10px;border-radius:18px;border:1px solid var(--li-border);background:#fff;cursor:pointer;font-family:inherit;}
+    .round-btn:disabled{cursor:not-allowed;opacity:0.55;}
     .round-btn.primary{border-color:#057642;background:#E8F5EE;color:#057642;}
     .round-btn.violet{border-color:#8B5CF6;background:#F8F4FF;color:#8B5CF6;}
     .round-btn.blue{border-color:#0A66C2;background:#EEF3F8;color:#0A66C2;}
+    .round-btn.danger{border-color:#B3261E;background:#FCE8E6;color:#B3261E;}
     .decision-pill{display:inline-block;padding:3px 9px;border-radius:14px;font-size:10px;font-weight:700;}
     .round-link{font-size:11px;color:var(--li-blue);font-weight:700;text-decoration:none;}
+    .round-lock-note{font-size:11px;color:#5F5E5A;background:#F1EFE8;border-radius:8px;padding:8px 10px;margin-bottom:10px;}
     .round-ai-box{margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #E1D5F9;background:#FBF9FF;}
     .round-ai-title{font-size:11px;font-weight:800;color:#8B5CF6;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;}
     .round-ai-copy{font-size:12px;line-height:1.6;color:var(--li-text);white-space:pre-wrap;}
     .round-list{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;}
     .round-tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;background:#EEF3F8;font-size:11px;color:#0A66C2;font-weight:600;}
-    .progress-shell{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:10px 0 12px;}
+    .progress-shell{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px;}
     .progress-step{border:1px solid var(--li-border);border-radius:999px;padding:6px 8px;font-size:11px;font-weight:700;text-align:center;color:var(--li-muted);background:#FAFAF8;}
     .progress-step.active{background:#E8F5EE;border-color:#B7DEC5;color:#057642;}
     .candidate-dossier{background:#FAFAF8;border:1px solid var(--li-border);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
@@ -1255,16 +1271,40 @@
 
   function renderProgressBar(application) {
     const rounds = roundsByApplication[application.id] || [];
-    const hasScheduled = rounds.some(round => round.scheduled_time);
-    const hasDecision = rounds.some(round => round.decision);
     const finalOutcome = ['offer', 'hired', 'rejected'].includes(application.status);
+    const completedRounds = rounds.filter(round => round.finalized_at).length;
+    const activeRound = rounds.find(round => !round.finalized_at);
     const steps = [
       { label: 'Applied', active: true },
-      { label: 'Interview Scheduled', active: hasScheduled || application.status === 'interview' || application.status === 'final_round' || finalOutcome },
-      { label: 'Round Decision', active: hasDecision || finalOutcome },
-      { label: 'Final Outcome', active: finalOutcome },
+      { label: activeRound ? `Current: ${formatRoundType(activeRound.round_type)}` : (completedRounds ? `${completedRounds} round${completedRounds !== 1 ? 's' : ''} done` : 'Ready for round 1'), active: rounds.length > 0 || application.status === 'interview' || application.status === 'final_round' || finalOutcome },
+      { label: finalOutcome ? 'Final outcome' : 'Still in process', active: finalOutcome },
     ];
     return `<div class="progress-shell">${steps.map(step => `<div class="progress-step ${step.active ? 'active' : ''}">${step.label}</div>`).join('')}</div>`;
+  }
+
+  function getRoundUiState(rounds, index) {
+    if (rounds[index]?.finalized_at) return 'completed';
+    const firstOpenIndex = rounds.findIndex(round => !round.finalized_at);
+    if (firstOpenIndex === -1) return 'completed';
+    return index === firstOpenIndex ? 'active' : 'pending';
+  }
+
+  function canAddNextRound(applicationId) {
+    const rounds = roundsByApplication[applicationId] || [];
+    return !rounds.length || rounds.every(round => !!round.finalized_at);
+  }
+
+  function canRemoveRound(round, uiState) {
+    return !round.finalized_at && !round.scheduled_time && !round.meeting_link && (uiState === 'active' || uiState === 'pending');
+  }
+
+  function roundStatePill(uiState) {
+    const labels = {
+      active: 'Current round',
+      completed: 'Completed',
+      pending: 'Waiting',
+    };
+    return `<span class="round-state-pill ${uiState}">${labels[uiState] || 'Round'}</span>`;
   }
 
   function renderCandidateDossier(application) {
@@ -1284,6 +1324,7 @@
 
   function renderRounds(application) {
     const rounds = roundsByApplication[application.id] || [];
+    const canAdd = canAddNextRound(application.id);
     const carryForward = application.recruiter_notes || application.screening_note;
     const carryForwardBox = carryForward
       ? `<div class="round-ai-box" style="margin-bottom:10px;background:#EEF3F8;border-color:#C5D9EF;">
@@ -1306,11 +1347,18 @@
     return `
       <div class="timeline-shell">
         <div class="timeline-top">
-          <div class="timeline-title">Interview Timeline</div>
-          <button class="timeline-btn" onclick='addRound(${JSON.stringify(application.id)})'>+ Add round</button>
+          <div>
+            <div class="timeline-title">Interview Timeline</div>
+            <div class="timeline-helper">${canAdd ? 'Previous round is completed. You can open the next round.' : 'Finish and save the current blue round before opening the next round.'}</div>
+          </div>
+          <button class="timeline-btn" onclick='addRound(${JSON.stringify(application.id)})' ${canAdd ? '' : 'disabled'}>+ Add round</button>
         </div>
         ${carryForwardBox}
-        ${rounds.map(round => {
+        ${rounds.map((round, index) => {
+          const uiState = getRoundUiState(rounds, index);
+          const isEditable = uiState === 'active';
+          const disableAttr = isEditable ? '' : 'disabled';
+          const canRemove = canRemoveRound(round, uiState);
           const roundTypeOptions = Object.keys(ROUND_TYPE_LABELS).map(type =>
             `<option value="${type}" ${type===round.round_type?'selected':''}>${formatRoundType(type)}</option>`
           ).join('');
@@ -1318,46 +1366,52 @@
             `<option value="${value}" ${value===((round.decision)||'')?'selected':''}>${DECISION_LABELS[value]}</option>`
           ).join('');
           return `
-            <div class="round-card">
+            <div class="round-card is-${uiState}">
               <div class="round-dot">${round.round_number || '?'}</div>
-              <div class="round-panel">
+              <div class="round-panel is-${uiState}">
                 <div class="round-panel-top">
                   <div>
                     <div class="round-name">Round ${round.round_number || '?'} · ${escapeHtml(formatRoundType(round.round_type))}</div>
                     <div class="round-sub">${escapeHtml(round.objective || 'Objective will help the interviewer focus on what to validate in this round.')}</div>
                   </div>
-                  <div>${renderDecisionPill(round.decision)}</div>
+                  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                    ${roundStatePill(uiState)}
+                    ${renderDecisionPill(round.decision)}
+                  </div>
                 </div>
+                ${uiState === 'completed' ? `<div class="round-lock-note">This round has been saved and locked. It stays visible for reference, but its details are no longer editable.</div>` : ''}
+                ${uiState === 'pending' ? `<div class="round-lock-note">This round is waiting. It will become active only after the previous round is completed.</div>` : ''}
                 <div class="round-grid">
                   <div class="round-field">
                     <label>Round Type</label>
-                    <select id="round-type-${round.id}">${roundTypeOptions}</select>
+                    <select id="round-type-${round.id}" ${disableAttr}>${roundTypeOptions}</select>
                   </div>
                   <div class="round-field">
                     <label>Interviewer Name</label>
-                    <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds" />
+                    <input id="round-interviewer-${round.id}" type="text" value="${escapeHtml(round.interviewer_name || '')}" placeholder="e.g. Sarah Reynolds" ${disableAttr} />
                   </div>
                   <div class="round-field">
                     <label>Scheduled Time</label>
-                    <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}" />
+                    <input id="round-time-${round.id}" type="datetime-local" value="${formatDateTimeLocal(round.scheduled_time)}" ${disableAttr} />
                   </div>
                   <div class="round-field">
                     <label>Decision</label>
-                    <select id="round-decision-${round.id}">${decisionOptions}</select>
+                    <select id="round-decision-${round.id}" ${disableAttr}>${decisionOptions}</select>
                   </div>
                   <div class="round-field">
                     <label>Round Notes</label>
-                    <textarea id="round-notes-${round.id}" placeholder="What should the interviewer know going into this round?">${escapeHtml(round.notes || '')}</textarea>
+                    <textarea id="round-notes-${round.id}" placeholder="What should the interviewer know going into this round?" ${disableAttr}>${escapeHtml(round.notes || '')}</textarea>
                   </div>
                   <div class="round-field">
                     <label>Feedback / Outcome</label>
-                    <textarea id="round-feedback-${round.id}" placeholder="Capture feedback for the next interviewer or hiring manager.">${escapeHtml(round.feedback || '')}</textarea>
+                    <textarea id="round-feedback-${round.id}" placeholder="Capture feedback for the next interviewer or hiring manager." ${disableAttr}>${escapeHtml(round.feedback || '')}</textarea>
                   </div>
                 </div>
                 <div class="round-actions">
-                  <button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save round</button>
-                  <button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Generate AI Interview Pack</button>
-                  <button class="round-btn primary" onclick='scheduleFromRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(application.candidate_name || application.user_identifier)}, ${JSON.stringify(application.job_id)})'>Schedule</button>
+                  ${isEditable ? `<button class="round-btn" onclick='saveRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Save & lock round</button>` : ''}
+                  ${isEditable ? `<button class="round-btn violet" id="ai-pack-btn-${round.id}" onclick='runRoundAiPack(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Generate AI Interview Pack</button>` : ''}
+                  ${isEditable ? `<button class="round-btn primary" onclick='scheduleFromRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)}, ${JSON.stringify(application.candidate_name || application.user_identifier)}, ${JSON.stringify(application.job_id)})'>Schedule</button>` : ''}
+                  ${canRemove ? `<button class="round-btn danger" onclick='removeRound(${JSON.stringify(application.id)}, ${JSON.stringify(round.id)})'>Remove round</button>` : ''}
                   ${round.meeting_link ? `<a class="round-link" href="${escapeHtml(round.meeting_link)}" target="_blank">Open meeting ↗</a>` : ''}
                 </div>
                 ${renderBriefPack(round.brief_pack)}
@@ -1412,9 +1466,6 @@
           ${renderProgressBar(a)}
           ${renderCandidateDossier(a)}
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${skills}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-            <button onclick='addRound(${JSON.stringify(a.id)})' style="font-size:11px;font-weight:700;padding:4px 9px;border-radius:20px;border:1px solid #057642;background:#E8F5EE;color:#057642;cursor:pointer;font-family:inherit;">Add interview round</button>
-          </div>
           <div style="margin-top:8px;">
             <label style="display:block;font-size:11px;font-weight:700;color:var(--li-muted);margin-bottom:5px;">Recruiter notes</label>
             <textarea id="notes-${a.id}" style="width:100%;min-height:64px;border:1px solid var(--li-border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;" placeholder="Add notes for screening, feedback, or next steps...">${a.recruiter_notes || ''}</textarea>
@@ -1463,12 +1514,21 @@
   }
 
   async function addRound(applicationId) {
+    if (!canAddNextRound(applicationId)) {
+      showToast('Finish and save the current round before adding the next one.');
+      return;
+    }
     try {
       const res = await fetch(getBase()+`/applications/${applicationId}/rounds`, {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ round_type: nextRoundType(applicationId) })
       });
+      if(res.status === 409) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'Complete the current round before adding another.');
+        return;
+      }
       if(!res.ok) throw new Error();
       const round = await res.json();
       syncRounds(applicationId, [...(roundsByApplication[applicationId] || []), round]);
@@ -1487,21 +1547,58 @@
       decision: document.getElementById(`round-decision-${roundId}`).value || null,
       notes: document.getElementById(`round-notes-${roundId}`).value.trim(),
       feedback: document.getElementById(`round-feedback-${roundId}`).value.trim(),
+      finalized_at: new Date().toISOString(),
     };
+    if (!payload.interviewer_name) {
+      showToast('Add the interviewer name before saving this round.');
+      return;
+    }
+    if (!payload.scheduled_time) {
+      showToast('Schedule the round before saving it.');
+      return;
+    }
+    if (!payload.decision) {
+      showToast('Select a decision before saving this round.');
+      return;
+    }
     try {
       const res = await fetch(getBase()+`/interview-rounds/${roundId}`, {
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(payload)
       });
+      if(res.status === 409) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'This round is already locked.');
+        return;
+      }
       if(!res.ok) throw new Error();
       const updated = await res.json();
       const nextRounds = (roundsByApplication[applicationId] || []).map(round => round.id === roundId ? updated : round);
       syncRounds(applicationId, nextRounds);
       renderApplicants();
-      showToast('Round saved.');
+      showToast('Round saved and locked.');
     } catch(e) {
       showToast('Could not save round.');
+    }
+  }
+
+  async function removeRound(applicationId, roundId) {
+    try {
+      const res = await fetch(getBase()+`/interview-rounds/${roundId}`, { method:'DELETE' });
+      if (res.status === 409) {
+        const err = await res.json().catch(() => ({}));
+        showToast(err.error || 'This round can no longer be removed.');
+        return;
+      }
+      if (!res.ok) throw new Error();
+      const nextRounds = (roundsByApplication[applicationId] || []).filter(round => round.id !== roundId)
+        .map((round, index) => ({ ...round, round_number: index + 1 }));
+      syncRounds(applicationId, nextRounds);
+      renderApplicants();
+      showToast('Draft round removed.');
+    } catch (e) {
+      showToast('Could not remove round.');
     }
   }
 

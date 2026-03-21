@@ -135,8 +135,176 @@ def profile_resume_sync(profile, resume_text):
 def _resume_lines(resume_text):
     return [line.strip() for line in (resume_text or "").splitlines() if line.strip()]
 
+
+_DATE_SPAN_RE = re.compile(
+    r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s*\d{4}\s*[-–—to]+\s*(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s*\d{4}|'
+    r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s*\d{4}\s*[-–—to]+\s*(?:Present|Current|Now|Till\s*[Dd]ate)|'
+    r'\d{4}\s*[-–—]\s*(?:\d{4}|Present|Current)',
+    re.IGNORECASE,
+)
+
+
+def _has_date_span(text):
+    return bool(_DATE_SPAN_RE.search(text))
+
+
+def _extract_date_span(text):
+    m = _DATE_SPAN_RE.search(text)
+    return m.group().strip() if m else ""
+
+
+def _is_section_header(line):
+    words = set(re.findall(r'[a-z]+', line.lower()))
+    return len(line.split()) <= 6 and bool(words.intersection(HEADER_WORDS))
+
+
+def _get_section_lines(all_lines, target_words):
+    in_target = False
+    result = []
+    for line in all_lines:
+        low = line.lower()
+        if _is_section_header(line):
+            words = set(re.findall(r'[a-z]+', low))
+            if words.intersection(target_words):
+                in_target = True
+                continue
+            elif in_target:
+                break
+        if in_target:
+            result.append(line)
+    return result
+
+
+def extract_experience_from_resume(resume_text, limit=4):
+    lines = _resume_lines(resume_text)
+    exp_lines = _get_section_lines(lines, {"experience", "employment", "work"})
+    if not exp_lines:
+        return []
+
+    entries = []
+    i = 0
+    while i < len(exp_lines) and len(entries) < limit:
+        line = exp_lines[i]
+        span = _extract_date_span(line)
+        next_span = _extract_date_span(exp_lines[i + 1]) if i + 1 < len(exp_lines) else ""
+
+        if not span and not next_span:
+            i += 1
+            continue
+
+        title, company, duration = "", "", span or next_span
+        clean = _DATE_SPAN_RE.sub("", line).strip().strip("|-–,•").strip()
+
+        at_match = re.match(r'^(.+?)\s+at\s+(.+)$', clean, re.IGNORECASE)
+        pipe_parts = [p.strip() for p in re.split(r'\s*[|•]\s*', clean) if p.strip()]
+
+        if at_match:
+            title = at_match.group(1).strip()
+            company = at_match.group(2).strip()
+        elif len(pipe_parts) >= 2:
+            title = pipe_parts[0]
+            company = pipe_parts[1]
+        elif clean:
+            if i > 0 and not _is_section_header(exp_lines[i - 1]) and not _has_date_span(exp_lines[i - 1]):
+                company = clean
+                title = exp_lines[i - 1].strip()
+            else:
+                title = clean
+
+        if next_span and not span:
+            # current line has no date — title/company here, date on next line
+            title = line.strip()
+            company = ""
+            duration = next_span
+            i += 1
+
+        # Collect up to 2 description bullet lines
+        desc_parts = []
+        j = i + 1
+        while j < len(exp_lines) and len(desc_parts) < 2:
+            dl = exp_lines[j].strip()
+            if not dl or _is_section_header(exp_lines[j]) or _has_date_span(dl):
+                break
+            if j + 1 < len(exp_lines) and _has_date_span(exp_lines[j + 1]):
+                break
+            desc_parts.append(dl.lstrip("•-–▸▪ ").strip())
+            j += 1
+
+        if title or company:
+            entries.append({
+                "title": title[:80],
+                "company": company[:60],
+                "duration": duration[:40],
+                "location": "",
+                "desc": " ".join(desc_parts)[:200],
+            })
+        i = j
+
+    return entries
+
+
+def extract_education_from_resume(resume_text, limit=3):
+    lines = _resume_lines(resume_text)
+    edu_lines = _get_section_lines(lines, {"education", "academic", "qualification", "qualifications"})
+    if not edu_lines:
+        return []
+
+    entries = []
+    i = 0
+    while i < len(edu_lines) and len(entries) < limit:
+        line = edu_lines[i]
+        span = _extract_date_span(line)
+        next_span = _extract_date_span(edu_lines[i + 1]) if i + 1 < len(edu_lines) else ""
+
+        if not span and not next_span:
+            i += 1
+            continue
+
+        school, degree, years = "", "", span or next_span
+        clean = _DATE_SPAN_RE.sub("", line).strip().strip("|-–,•").strip()
+        pipe_parts = [p.strip() for p in re.split(r'\s*[|,]\s*', clean) if p.strip()]
+
+        if len(pipe_parts) >= 2:
+            # "Degree, School | 2016-2020" → degree=parts[0], school=parts[1]
+            degree = pipe_parts[0]
+            school = pipe_parts[1]
+        elif clean and i > 0 and not _is_section_header(edu_lines[i - 1]) and not _has_date_span(edu_lines[i - 1]):
+            school = edu_lines[i - 1].strip()
+            degree = clean
+        elif clean:
+            school = clean
+
+        if next_span and not span:
+            school = line.strip()
+            next_clean = _DATE_SPAN_RE.sub("", edu_lines[i + 1]).strip().strip("|-–,•").strip()
+            degree = next_clean
+            years = next_span
+            i += 1
+
+        if school or degree:
+            entries.append({
+                "school": school[:80],
+                "degree": degree[:80],
+                "years": years[:40],
+            })
+        i += 1
+
+    return entries
+
 def guess_resume_name(resume_text):
-    for line in _resume_lines(resume_text)[:10]:
+    lines = _resume_lines(resume_text)
+    # First pass: top 5 lines only — name is almost always here
+    for line in lines[:5]:
+        if "@" in line or re.search(r"\d{5,}", line):
+            continue
+        lowered_words = {word.lower() for word in re.findall(r"[A-Za-z]+", line)}
+        if lowered_words.intersection(HEADER_WORDS):
+            continue
+        words = [word for word in re.split(r"\s+", line) if word]
+        if 2 <= len(words) <= 4 and all(re.fullmatch(r"[A-Za-z.'-]+", word) for word in words):
+            return " ".join(word.capitalize() for word in words)
+    # Second pass: widen to top 10 lines
+    for line in lines[5:10]:
         if "@" in line or re.search(r"\d{7,}", line):
             continue
         lowered_words = {word.lower() for word in re.findall(r"[A-Za-z]+", line)}
@@ -170,12 +338,14 @@ def extract_skills_from_resume(resume_text, limit=12):
 
 def fallback_profile_from_resume(resume_text, existing_profile=None):
     existing_profile = existing_profile or {}
-    name = guess_resume_name(resume_text) or existing_profile.get("name") or "Aayush Thakur"
+    name = existing_profile.get("name") or ""
     location = guess_resume_location(resume_text) or existing_profile.get("location") or ""
     skills = extract_skills_from_resume(resume_text)
     headline = existing_profile.get("headline") or ""
     if not headline and skills:
         headline = f"{skills[0]} professional open to new opportunities"
+    experience = extract_experience_from_resume(resume_text)
+    education = extract_education_from_resume(resume_text)
 
     return {
         "name": name,
@@ -183,8 +353,8 @@ def fallback_profile_from_resume(resume_text, existing_profile=None):
         "one_liner": headline or (f"{skills[0]} talent open to new opportunities" if skills else ""),
         "location": location,
         "skills": skills,
-        "experience": [],
-        "education": [],
+        "experience": experience,
+        "education": education,
     }
 
 def quick_bio_from_profile(profile):
