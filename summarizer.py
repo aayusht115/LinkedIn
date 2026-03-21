@@ -1,14 +1,13 @@
 import json
+import os
 import re
+import requests
 
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
 from resume_utils import fallback_profile_from_resume
 
+HF_TOKEN = os.environ.get("HF_TOKEN", "")
 MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
-
-_tokenizer = None
-_model = None
+_HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_NAME}"
 
 STOP_WORDS = {
     "the", "and", "for", "with", "that", "this", "from", "into", "your", "you",
@@ -26,16 +25,41 @@ ROUND_OBJECTIVES = {
     "hr_round": "Clarify motivation, logistics, compensation expectations, and closing concerns.",
 }
 
-def _load_model():
-    global _tokenizer, _model
-    if _tokenizer is None:
-        try:
-            _tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-            _model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, torch_dtype=torch.float32)
-        except Exception as e:
-            print(f"[summarizer] Could not load model ({e}). AI features will use fallback text.")
-            _tokenizer = False  # sentinel: attempted but failed
-            _model = None
+
+def _model_available():
+    return bool(HF_TOKEN)
+
+
+def _call_hf(prompt, max_new_tokens=200):
+    """Call HuggingFace Inference API and return generated text."""
+    if not HF_TOKEN:
+        return ""
+    headers = {
+        "Authorization": f"Bearer {HF_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": max_new_tokens,
+            "return_full_text": False,
+            "do_sample": False,
+        },
+    }
+    try:
+        resp = requests.post(_HF_API_URL, headers=headers, json=payload, timeout=60)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list) and data:
+            return (data[0].get("generated_text") or "").strip()
+        # Model loading response (503) — HF needs time to warm up
+        if isinstance(data, dict) and data.get("error"):
+            print(f"[summarizer] HF API: {data['error']}")
+        return ""
+    except Exception as e:
+        print(f"[summarizer] HF API error: {e}")
+        return ""
+
 
 def _parse_json_list(value):
     if not value:
@@ -45,6 +69,7 @@ def _parse_json_list(value):
         return parsed if isinstance(parsed, list) else []
     except Exception:
         return []
+
 
 def _extract_json_object(text):
     if not text:
@@ -57,15 +82,18 @@ def _extract_json_object(text):
     except Exception:
         return None
 
+
 def _tokenize(text):
     return [
         token for token in re.split(r"[\s,;:+/|()\-–—]+", (text or "").lower())
         if len(token) > 2 and token not in STOP_WORDS
     ]
 
+
 def _extract_years(text):
     match = re.search(r"(\d+)\+?\s*year", (text or "").lower())
     return int(match.group(1)) if match else None
+
 
 def _location_signal(profile_location, job_location, work_type):
     if work_type and work_type.lower() == "remote":
@@ -78,6 +106,7 @@ def _location_signal(profile_location, job_location, work_type):
     if profile_location and job_location:
         return {"label": "Location", "status": "gap", "detail": f"Profile location ({profile_location}) differs from job location ({job_location})."}
     return {"label": "Location", "status": "unknown", "detail": "Location information is incomplete."}
+
 
 def _profile_strings(profile):
     experience_entries = _parse_json_list(profile.get("experience"))
@@ -112,8 +141,10 @@ def _profile_strings(profile):
     ]))
     return experience_entries, education_entries, profile_text, experience_text, education_text, resume_text
 
+
 def round_objective_for(round_type):
     return ROUND_OBJECTIVES.get(round_type or "", "Assess this round's most important competencies and capture a clear go/no-go signal.")
+
 
 def _experience_summary(profile, limit=3):
     entries = _parse_json_list(profile.get("experience"))
@@ -126,6 +157,7 @@ def _experience_summary(profile, limit=3):
         if line:
             lines.append(line)
     return lines
+
 
 def _resume_highlights(profile, limit=4):
     highlights = []
@@ -144,6 +176,7 @@ def _resume_highlights(profile, limit=4):
             break
     return highlights[:limit]
 
+
 def _candidate_summary(profile):
     skills = ", ".join(skill.strip() for skill in (profile.get("skills", "") or "").split(",")[:6] if skill.strip())
     experience_summary = "; ".join(_experience_summary(profile, limit=2))
@@ -156,6 +189,7 @@ def _candidate_summary(profile):
         profile.get("bio") or "",
     ]
     return " | ".join(part for part in parts if part)
+
 
 def calculate_fit_breakdown(profile, job):
     experience_entries, education_entries, profile_text, experience_text, education_text, resume_text = _profile_strings(profile)
@@ -234,47 +268,23 @@ def calculate_fit_breakdown(profile, job):
         },
     }
 
-def _model_available():
-    return _model is not None and _tokenizer is not False
 
 def summarize_post(text):
-    _load_model()
     if not _model_available():
         return (text[:180] + "…") if len(text) > 180 else text
-
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that summarizes LinkedIn posts in exactly one short sentence. Reply with only the summary sentence, nothing else."},
-        {"role": "user", "content": f"Summarize this LinkedIn post in one sentence:\n\n{text}"}
-    ]
-
-    prompt = _tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
+    prompt = (
+        f"<|im_start|>system\nYou summarize LinkedIn posts in exactly one short sentence. Reply with only the summary sentence, nothing else.<|im_end|>\n"
+        f"<|im_start|>user\nSummarize this LinkedIn post in one sentence:\n\n{text}<|im_end|>\n"
+        f"<|im_start|>assistant\n"
     )
-
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    input_ids = inputs["input_ids"]
-
-    with torch.no_grad():
-        output = _model.generate(
-            input_ids,
-            max_new_tokens=60,
-            do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-
-    new_tokens = output[0][input_ids.shape[-1]:]
-    summary = _tokenizer.decode(new_tokens, skip_special_tokens=True)
-    return summary.strip()
+    result = _call_hf(prompt, max_new_tokens=60)
+    return result or ((text[:180] + "…") if len(text) > 180 else text)
 
 
 def analyze_fit(profile, job):
-    """AI-powered fit analysis using Qwen."""
-    _load_model()
     breakdown = calculate_fit_breakdown(profile, job)
     if not _model_available():
-        return {**breakdown, "analysis": "AI analysis unavailable — model could not be loaded on this server."}
+        return {**breakdown, "analysis": "AI analysis unavailable — set HF_TOKEN to enable."}
     skills = profile.get("skills", "") or "not specified"
     location = profile.get("location", "") or "not specified"
     experience_entries = _parse_json_list(profile.get("experience"))
@@ -301,29 +311,21 @@ def analyze_fit(profile, job):
         f"In 4 short sentences: state overall fit, strengths, important gaps, and whether to apply now or what to improve first.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
-
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=180, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    result = _tokenizer.decode(output[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
+    result = _call_hf(prompt, max_new_tokens=180)
     return {
         "score": breakdown["score"],
         "matched": breakdown["matched"],
         "gaps": breakdown["gaps"],
         "signals": breakdown["signals"],
         "recommendation": breakdown["recommendation"],
-        "analysis": result.strip(),
+        "analysis": result or "AI analysis unavailable.",
     }
 
 
 def generate_screening_note(profile, job, application=None):
-    _load_model()
     breakdown = calculate_fit_breakdown(profile, job)
     if not _model_available():
-        return {"note": "AI screening unavailable — model could not be loaded.", "score": breakdown["score"], "breakdown": breakdown}
+        return {"note": "AI screening unavailable — set HF_TOKEN to enable.", "score": breakdown["score"], "breakdown": breakdown}
     prompt = (
         f"<|im_start|>system\nYou write recruiter screening notes. Be concise and actionable.<|im_end|>\n"
         f"<|im_start|>user\n"
@@ -339,21 +341,13 @@ def generate_screening_note(profile, job, application=None):
         f"Write 3 bullet points: strengths, concerns, recruiter recommendation.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=220, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    result = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-    return {"note": result.strip(), "score": breakdown["score"], "breakdown": breakdown}
+    result = _call_hf(prompt, max_new_tokens=220)
+    return {"note": result or "Could not generate screening note.", "score": breakdown["score"], "breakdown": breakdown}
 
 
 def generate_interview_questions(job):
-    """Generate role-specific interview questions using Qwen."""
-    _load_model()
     if not _model_available():
-        return "AI question generation unavailable — model could not be loaded."
+        return "AI question generation unavailable — set HF_TOKEN to enable."
     prompt = (
         f"<|im_start|>system\nYou are a technical interviewer. List interview questions only.<|im_end|>\n"
         f"<|im_start|>user\n"
@@ -363,21 +357,21 @@ def generate_interview_questions(job):
         f"Format: numbered list, mix of technical and behavioural questions.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
+    return _call_hf(prompt, max_new_tokens=250) or "Could not generate questions."
 
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=250, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    result = _tokenizer.decode(output[0][inputs['input_ids'].shape[1]:], skip_special_tokens=True)
-    return result.strip()
 
 def generate_round_brief_pack(profile, job, application=None, round_info=None):
-    _load_model()
     round_info = round_info or {}
     if not _model_available():
-        return {"candidate_summary": _candidate_summary(profile), "screening_bullets": "AI unavailable.", "recruiter_notes": (application or {}).get("recruiter_notes") or "", "resume_highlights": _resume_highlights(profile), "gaps_to_probe": [], "round_objective": round_objective_for((round_info or {}).get("round_type")), "interviewer_guidance": "AI guidance unavailable — model could not be loaded."}
+        return {
+            "candidate_summary": _candidate_summary(profile),
+            "screening_bullets": "AI unavailable — set HF_TOKEN to enable.",
+            "recruiter_notes": (application or {}).get("recruiter_notes") or "",
+            "resume_highlights": _resume_highlights(profile),
+            "gaps_to_probe": [],
+            "round_objective": round_objective_for(round_info.get("round_type")),
+            "interviewer_guidance": "AI guidance unavailable — set HF_TOKEN to enable.",
+        }
     breakdown = calculate_fit_breakdown(profile, job)
     objective = round_info.get("objective") or round_objective_for(round_info.get("round_type"))
     candidate_summary = _candidate_summary(profile)
@@ -407,14 +401,7 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
         f"ROUND BRIEFING: 5 sentences covering what is promising, what to validate, what to probe, and what a strong signal looks like in this round.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
-
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=300, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    full_text = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+    full_text = _call_hf(prompt, max_new_tokens=300) or ""
 
     screening_text = ""
     briefing_text = full_text
@@ -436,11 +423,11 @@ def generate_round_brief_pack(profile, job, application=None, round_info=None):
         "interviewer_guidance": briefing_text,
     }
 
+
 def generate_candidate_interview_questions(profile, job, application=None, round_info=None, previous_feedback=None):
-    _load_model()
     round_info = round_info or {}
     if not _model_available():
-        return "AI question generation unavailable — model could not be loaded."
+        return "AI question generation unavailable — set HF_TOKEN to enable."
     breakdown = calculate_fit_breakdown(profile, job)
     objective = round_info.get("objective") or round_objective_for(round_info.get("round_type"))
     candidate_summary = _candidate_summary(profile)
@@ -477,24 +464,16 @@ def generate_candidate_interview_questions(profile, job, application=None, round
         f"Format each line as: [Category] Question\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
+    return _call_hf(prompt, max_new_tokens=320) or "Could not generate questions."
 
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=320, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    result = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
-    return result.strip()
 
 def generate_resume_bio(resume_text, existing_profile=None):
-    _load_model()
     existing_profile = existing_profile or {}
     if not _model_available():
         return existing_profile.get("bio") or ""
     fallback = fallback_profile_from_resume(resume_text, existing_profile)
     prompt = (
-        f"<|im_start|>system\nYou write concise professional bios for job platforms.\n<|im_end|>\n"
+        f"<|im_start|>system\nYou write concise professional bios for job platforms.<|im_end|>\n"
         f"<|im_start|>user\n"
         f"Candidate name: {existing_profile.get('name') or fallback.get('name')}\n"
         f"Candidate headline: {existing_profile.get('headline') or fallback.get('headline')}\n"
@@ -502,21 +481,17 @@ def generate_resume_bio(resume_text, existing_profile=None):
         f"Write a polished 2-sentence bio in first person that sounds professional, specific, and recruiter-friendly.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=140, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    result = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+    result = _call_hf(prompt, max_new_tokens=140)
     return result or existing_profile.get("bio") or ""
 
+
 def infer_profile_from_resume(resume_text, existing_profile=None):
-    _load_model()
     existing_profile = existing_profile or {}
     fallback = fallback_profile_from_resume(resume_text, existing_profile)
+    if not _model_available():
+        return fallback
     prompt = (
-        f"<|im_start|>system\nExtract resume details into valid JSON only. No commentary.\n<|im_end|>\n"
+        f"<|im_start|>system\nExtract resume details into valid JSON only. No commentary.<|im_end|>\n"
         f"<|im_start|>user\n"
         f"Resume text:\n{(resume_text or '')[:4500]}\n\n"
         f"Existing profile hints: {json.dumps({'name': existing_profile.get('name'), 'headline': existing_profile.get('headline'), 'location': existing_profile.get('location')})}\n"
@@ -527,13 +502,7 @@ def infer_profile_from_resume(resume_text, existing_profile=None):
         f"If a field is unknown, use an empty string or empty array.\n"
         f"<|im_end|>\n<|im_start|>assistant\n"
     )
-    inputs = _tokenizer(prompt, return_tensors="pt")
-    with torch.no_grad():
-        output = _model.generate(
-            **inputs, max_new_tokens=360, do_sample=False,
-            pad_token_id=_tokenizer.eos_token_id
-        )
-    raw = _tokenizer.decode(output[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+    raw = _call_hf(prompt, max_new_tokens=360)
     parsed = _extract_json_object(raw) or {}
 
     skills = parsed.get("skills")
