@@ -152,15 +152,11 @@
       <input type="text" placeholder="Search jobs, people, companies..." />
     </div>
     <div class="nav-icons">
-      <div class="nav-item active" id="nav-home" onclick="switchMainView('home')">
-        <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        Home
-      </div>
-      <div class="nav-item" id="nav-feed" onclick="switchMainView('feed')">
+      <div class="nav-item active" id="nav-feed" onclick="switchMainView('feed')">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="24" height="24"><path d="M4 6h16M4 10h16M4 14h10"/></svg>
         Feed
       </div>
-      <div class="nav-item">
+      <div class="nav-item" id="nav-jobs" onclick="switchMainView('jobs')">
         <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" width="24" height="24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
         Jobs
       </div>
@@ -219,8 +215,8 @@
   <!-- FEED -->
   <div class="feed">
 
-    <!-- HOME VIEW: job recommendations -->
-    <div id="view-home">
+    <!-- JOBS VIEW: job recommendations -->
+    <div id="view-home" style="display:none;">
     <div class="job-card" id="jobs-card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
         <div style="font-weight:700;font-size:15px;">Jobs picked for you</div>
@@ -233,7 +229,7 @@
     </div><!-- end #view-home -->
 
     <!-- FEED VIEW: posts + AI summarizer -->
-    <div id="view-feed" style="display:none;">
+    <div id="view-feed">
 
     <!-- Post composer -->
     <div class="post-composer">
@@ -500,10 +496,10 @@
   let currentFitJob = null;
 
   function switchMainView(view) {
-    document.getElementById('view-home').style.display = view === 'home' ? '' : 'none';
+    document.getElementById('view-home').style.display = view === 'jobs' ? '' : 'none';
     document.getElementById('view-feed').style.display = view === 'feed' ? '' : 'none';
-    document.getElementById('nav-home').classList.toggle('active', view === 'home');
     document.getElementById('nav-feed').classList.toggle('active', view === 'feed');
+    document.getElementById('nav-jobs').classList.toggle('active', view === 'jobs');
   }
 
   async function loadJobs(mode='active'){
