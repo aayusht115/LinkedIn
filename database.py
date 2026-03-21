@@ -107,6 +107,141 @@ JOBS_SEED = [
         "status": "active",
         "posted_at": "2026-03-19 09:00:00",
     },
+    {
+        "id": "job_openai_004",
+        "title": "Backend Engineer",
+        "company": "OpenAI",
+        "location": "San Francisco, CA",
+        "work_type": "Hybrid",
+        "job_type": "Full-time",
+        "experience_level": "Mid-Senior level",
+        "industry": "AI / Software",
+        "salary_min": 160000,
+        "salary_max": 220000,
+        "salary_currency": "USD",
+        "salary_period": "year",
+        "openings": 2,
+        "applicants": 18,
+        "recruiter_id": "rec_openai_011",
+        "logo": "OA",
+        "skills": "Python,FastAPI,PostgreSQL,Redis,Docker,Kubernetes",
+        "requirements": "4+ years backend engineering, Python, APIs, SQL, cloud systems, observability",
+        "about_role": "Build reliable backend systems that power internal and external AI products. You'll work on APIs, data flows, and platform tooling that support fast product development and dependable operations.",
+        "responsibilities": "Design and ship backend services\nOwn API reliability and performance\nImprove observability and production debugging\nWork with product and infra teams on service design\nSupport secure, scalable deployments",
+        "qualifications": "Strong Python backend experience\nComfort with relational databases and caching\nExperience with production APIs and monitoring\nAbility to work across product and platform concerns",
+        "nice_to_have": "Experience with LLM products\nFamiliarity with Kubernetes\nExposure to event-driven systems",
+        "deadline": "2026-05-10",
+        "status": "active",
+        "posted_at": "2026-03-20 11:30:00",
+    },
+    {
+        "id": "job_meta_005",
+        "title": "Full Stack Engineer",
+        "company": "Meta",
+        "location": "Bengaluru, India",
+        "work_type": "Hybrid",
+        "job_type": "Full-time",
+        "experience_level": "Associate",
+        "industry": "Consumer Internet",
+        "salary_min": 2800000,
+        "salary_max": 4200000,
+        "salary_currency": "INR",
+        "salary_period": "year",
+        "openings": 3,
+        "applicants": 31,
+        "recruiter_id": "rec_meta_004",
+        "logo": "ME",
+        "skills": "React,TypeScript,Python,GraphQL,MySQL,AWS",
+        "requirements": "2+ years full stack development, React, APIs, databases, product thinking",
+        "about_role": "Join a product engineering team building user-facing features and the backend systems behind them. This role is ideal for someone comfortable moving across UI, APIs, and data models.",
+        "responsibilities": "Build frontend and backend product features\nWork closely with designers and PMs\nImprove performance and reliability of product flows\nWrite maintainable, well-tested code\nShip experiments quickly and safely",
+        "qualifications": "Strong JavaScript/TypeScript foundations\nHands-on backend experience with Python or similar\nComfort with databases and API design\nAbility to own features end to end",
+        "nice_to_have": "GraphQL experience\nConsumer product experience\nA/B testing familiarity",
+        "deadline": "2026-05-15",
+        "status": "active",
+        "posted_at": "2026-03-20 15:00:00",
+    },
+    {
+        "id": "job_amazon_006",
+        "title": "Software Development Engineer",
+        "company": "Amazon",
+        "location": "Seattle, WA",
+        "work_type": "On-site",
+        "job_type": "Full-time",
+        "experience_level": "Mid-Senior level",
+        "industry": "Cloud / Commerce",
+        "salary_min": 145000,
+        "salary_max": 195000,
+        "salary_currency": "USD",
+        "salary_period": "year",
+        "openings": 4,
+        "applicants": 27,
+        "recruiter_id": "rec_amazon_006",
+        "logo": "AM",
+        "skills": "Java,Python,AWS,System Design,DynamoDB,Microservices",
+        "requirements": "3+ years software engineering, distributed systems, coding, design, operations",
+        "about_role": "Work on large-scale internal and customer-facing systems that demand reliability, scale, and strong engineering fundamentals. You'll own services through design, implementation, and operations.",
+        "responsibilities": "Design and build distributed services\nParticipate in architectural reviews\nMonitor and operate production systems\nCollaborate across teams to deliver roadmap items\nImprove system resilience and scalability",
+        "qualifications": "Strong CS fundamentals\nExperience building scalable backend systems\nSolid coding in Java or Python\nComfort with operational ownership",
+        "nice_to_have": "AWS service knowledge\nExperience with event-driven architectures\nMentoring experience",
+        "deadline": "2026-05-22",
+        "status": "active",
+        "posted_at": "2026-03-21 09:15:00",
+    },
+    {
+        "id": "job_airbnb_007",
+        "title": "Product Designer",
+        "company": "Airbnb",
+        "location": "Remote",
+        "work_type": "Remote",
+        "job_type": "Full-time",
+        "experience_level": "Associate",
+        "industry": "Travel / Marketplace",
+        "salary_min": 120000,
+        "salary_max": 165000,
+        "salary_currency": "USD",
+        "salary_period": "year",
+        "openings": 1,
+        "applicants": 14,
+        "recruiter_id": "rec_airbnb_010",
+        "logo": "AB",
+        "skills": "Figma,Design Systems,UX Research,Prototyping,Interaction Design",
+        "requirements": "Portfolio, end-to-end product design, collaboration, prototyping, research synthesis",
+        "about_role": "Shape intuitive marketplace experiences for guests and hosts. You'll partner with product, content, and engineering to create polished, user-centered journeys across core booking and hosting flows.",
+        "responsibilities": "Own design for key marketplace flows\nCreate wireframes and polished UI\nWork with researchers to validate concepts\nContribute to the design system\nPartner closely with engineering during implementation",
+        "qualifications": "Strong product design portfolio\nExperience shipping consumer-facing experiences\nComfort with prototypes and design systems\nStrong communication and storytelling",
+        "nice_to_have": "Marketplace or travel domain experience\nAccessibility knowledge\nService design exposure",
+        "deadline": "2026-05-18",
+        "status": "active",
+        "posted_at": "2026-03-21 12:20:00",
+    },
+    {
+        "id": "job_google_008",
+        "title": "Data Analyst",
+        "company": "Google",
+        "location": "Singapore",
+        "work_type": "Hybrid",
+        "job_type": "Full-time",
+        "experience_level": "Entry level",
+        "industry": "Technology / Analytics",
+        "salary_min": 70000,
+        "salary_max": 95000,
+        "salary_currency": "USD",
+        "salary_period": "year",
+        "openings": 2,
+        "applicants": 22,
+        "recruiter_id": "rec_google_005",
+        "logo": "GO",
+        "skills": "SQL,Python,Excel,Tableau,Statistics,Data Visualization",
+        "requirements": "SQL, analytics, dashboarding, experimentation, stakeholder communication",
+        "about_role": "Support product and business teams with high-quality analysis, dashboards, and decision support. This role is ideal for someone who enjoys turning messy data into clear business insight.",
+        "responsibilities": "Build dashboards and recurring reports\nAnalyze product and operational datasets\nPartner with stakeholders to frame business questions\nPresent insights clearly to non-technical teams\nImprove data quality and documentation",
+        "qualifications": "Strong SQL and analytical thinking\nWorking knowledge of Python or R\nClear communication skills\nComfort working with ambiguity",
+        "nice_to_have": "Experimentation or A/B testing exposure\nLooker or Tableau experience\nBusiness analytics background",
+        "deadline": "2026-05-25",
+        "status": "active",
+        "posted_at": "2026-03-21 13:10:00",
+    },
 ]
 
 # ── Connection ────────────────────────────────────────────────────────────────
@@ -260,6 +395,7 @@ def init_db():
             objective TEXT,
             brief_pack TEXT,
             question_pack TEXT,
+            finalized_at TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(application_id, round_number),
@@ -281,6 +417,7 @@ def init_db():
     _ensure_column(conn, "interview_rounds", "objective", "TEXT")
     _ensure_column(conn, "interview_rounds", "brief_pack", "TEXT")
     _ensure_column(conn, "interview_rounds", "question_pack", "TEXT")
+    _ensure_column(conn, "interview_rounds", "finalized_at", "TEXT")
     _ensure_column(conn, "candidate_profiles", "resume_filename", "TEXT")
     _ensure_column(conn, "candidate_profiles", "resume_path", "TEXT")
     _ensure_column(conn, "candidate_profiles", "resume_text", "TEXT")
@@ -290,6 +427,8 @@ def init_db():
     _ensure_column(conn, "applications", "rejection_reason", "TEXT")
     _ensure_column(conn, "applications", "offer_due_date", "TEXT")
     _ensure_column(conn, "applications", "candidate_decision", "TEXT")
+    _ensure_column(conn, "applications", "process_feedback", "TEXT")
+    _ensure_column(conn, "applications", "process_rating", "REAL")
 
     conn.commit()
     _seed_recruiters(conn)
@@ -312,8 +451,6 @@ def _seed_recruiters(conn):
     conn.commit()
 
 def _seed_jobs(conn):
-    if conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0] > 0:
-        return
     for job in JOBS_SEED:
         conn.execute("""
             INSERT OR IGNORE INTO jobs
@@ -431,6 +568,7 @@ def update_interview_round(round_id, data):
         "objective",
         "brief_pack",
         "question_pack",
+        "finalized_at",
     }
     updates = []
     values = []
@@ -452,6 +590,31 @@ def update_interview_round(round_id, data):
     conn.commit()
     conn.close()
     return get_interview_round(round_id)
+
+def delete_interview_round(round_id):
+    round_row = get_interview_round(round_id)
+    if not round_row:
+        return False
+
+    conn = get_connection()
+    conn.execute("DELETE FROM interview_rounds WHERE id = ?", (round_id,))
+
+    remaining = conn.execute("""
+        SELECT id
+        FROM interview_rounds
+        WHERE application_id = ?
+        ORDER BY round_number ASC, created_at ASC
+    """, (round_row["application_id"],)).fetchall()
+
+    for index, row in enumerate(remaining, start=1):
+        conn.execute(
+            "UPDATE interview_rounds SET round_number = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (index, row["id"]),
+        )
+
+    conn.commit()
+    conn.close()
+    return True
 
 # ── Recruiters ────────────────────────────────────────────────────────────────
 
@@ -733,6 +896,7 @@ def get_applications_by_job(job_id):
         SELECT a.id, a.job_id, a.user_identifier, a.status, a.cover_note, a.ai_score,
                a.ai_analysis, a.recruiter_notes, a.screening_note, a.resume_filename,
                a.rejection_reason, a.offer_due_date, a.candidate_decision,
+               a.process_feedback, a.process_rating,
                a.applied_at, a.updated_at,
                cp.name as candidate_name, cp.headline, cp.one_liner, cp.location as candidate_location,
                cp.skills as candidate_skills, cp.experience as candidate_experience,
@@ -820,3 +984,38 @@ def update_application_candidate_decision(application_id, decision):
     row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
     conn.close()
     return dict(row) if row else None
+
+def save_process_feedback(application_id, process_feedback, process_rating):
+    """Save recruiter's post-process debrief and recalculate recruiter rating."""
+    conn = get_connection()
+    conn.execute("""
+        UPDATE applications
+        SET process_feedback = ?, process_rating = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+    """, (process_feedback, process_rating, application_id))
+    conn.commit()
+
+    # Find the recruiter for this application via jobs table
+    row = conn.execute("""
+        SELECT j.recruiter_id FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        WHERE a.id = ?
+    """, (application_id,)).fetchone()
+    recruiter_id = row["recruiter_id"] if row else None
+
+    if recruiter_id:
+        # Recalculate recruiter rating as average of all their process ratings
+        avg_row = conn.execute("""
+            SELECT AVG(a.process_rating) as avg_rating
+            FROM applications a
+            JOIN jobs j ON a.job_id = j.id
+            WHERE j.recruiter_id = ? AND a.process_rating IS NOT NULL
+        """, (recruiter_id,)).fetchone()
+        new_rating = round(avg_row["avg_rating"], 2) if avg_row and avg_row["avg_rating"] else None
+        if new_rating is not None:
+            conn.execute("UPDATE recruiters SET rating = ? WHERE id = ?", (new_rating, recruiter_id))
+            conn.commit()
+
+    app_row = conn.execute("SELECT * FROM applications WHERE id=?", (application_id,)).fetchone()
+    conn.close()
+    return dict(app_row) if app_row else None

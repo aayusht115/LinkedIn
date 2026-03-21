@@ -21,7 +21,7 @@ from database import (
     get_candidate_profile, upsert_candidate_profile, save_candidate_resume, update_candidate_sync,
     apply_to_job, get_application, has_applied, get_applications_by_user, get_applications_by_job,
     update_application_status, get_application_by_id, update_application_ai, update_application_notes,
-    update_application_offer, update_application_candidate_decision,
+    update_application_offer, update_application_candidate_decision, save_process_feedback,
     create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round, delete_interview_round,
     delete_interview_round,
 )
@@ -386,6 +386,26 @@ def candidate_decision_route(application_id):
     result = update_application_candidate_decision(application_id, decision)
     if not result:
         return jsonify({"error": "Application not found"}), 404
+    return jsonify(result)
+
+@app.route("/applications/<application_id>/process-feedback", methods=["PATCH"])
+def process_feedback_route(application_id):
+    data = request.json or {}
+    feedback = (data.get("process_feedback") or "").strip()
+    rating = data.get("process_rating")
+    if not feedback:
+        return jsonify({"error": "Feedback is required"}), 400
+    try:
+        rating = float(rating) if rating is not None else None
+        if rating is not None and not (1 <= rating <= 5):
+            return jsonify({"error": "Rating must be between 1 and 5"}), 400
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid rating"}), 400
+    result = save_process_feedback(application_id, feedback, rating)
+    if not result:
+        return jsonify({"error": "Application not found"}), 404
+    import recruiter_score
+    recruiter_score._model = None  # force model refit on next score request
     return jsonify(result)
 
 @app.route("/applications/<application_id>/rounds", methods=["GET"])

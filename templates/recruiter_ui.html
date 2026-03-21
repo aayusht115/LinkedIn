@@ -1374,6 +1374,39 @@
     } catch(e) { showToast('Could not remove round.'); }
   }
 
+  let processStarValues = {};
+
+  function setProcessStar(applicationId, value) {
+    processStarValues[applicationId] = value;
+    for (let n = 1; n <= 5; n++) {
+      const el = document.getElementById(`star-${applicationId}-${n}`);
+      if (el) el.style.color = n <= value ? '#F59E0B' : '#D1D5DB';
+    }
+    const valEl = document.getElementById(`star-val-${applicationId}`);
+    if (valEl) valEl.textContent = value + ' / 5';
+  }
+
+  async function saveProcessDebrief(applicationId) {
+    const text = (document.getElementById(`debrief-text-${applicationId}`) || {}).value || '';
+    if (!text.trim()) { showToast('Please write a debrief before saving.'); return; }
+    const rating = processStarValues[applicationId] || null;
+    const btn = document.getElementById(`debrief-btn-${applicationId}`);
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span>Saving…'; }
+    try {
+      const res = await fetch(getBase()+`/applications/${applicationId}/process-feedback`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ process_feedback: text.trim(), process_rating: rating })
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json();
+      const app = allApplicants.find(a => a.id === applicationId);
+      if (app) { app.process_feedback = updated.process_feedback; app.process_rating = updated.process_rating; }
+      renderApplicants();
+      showToast('Debrief saved — recruiter score updated.');
+    } catch(e) { showToast('Could not save debrief.'); }
+    finally { const b = document.getElementById(`debrief-btn-${applicationId}`); if (b) { b.disabled = false; b.textContent = 'Save debrief'; } }
+  }
+
   async function setOfferDueDate(applicationId) {
     const val = document.getElementById(`offer-due-${applicationId}`).value;
     try {
@@ -1701,6 +1734,23 @@
               <div class="app-section" style="background:#FEF2F2;border-left:3px solid #c0392b;">
                 <div style="font-size:10px;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:3px;">Rejection reason shared with candidate</div>
                 <div style="font-size:12px;color:var(--li-text);">${escapeHtml(a.rejection_reason)}</div>
+              </div>` : ''}
+            ${['hired','rejected'].includes(a.status) ? `
+              <div class="app-section" style="background:#FAFAF8;border-left:3px solid #8B5CF6;">
+                <div style="font-size:10px;font-weight:700;color:#8B5CF6;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Process Debrief — affects your recruiter score</div>
+                ${a.process_feedback ? `
+                  <div style="font-size:12px;color:#057642;font-weight:600;margin-bottom:6px;">✓ Debrief saved${a.process_rating ? ' · ' + '★'.repeat(Math.round(a.process_rating)) + ' ' + a.process_rating.toFixed(1) : ''}</div>
+                  <div style="font-size:12px;color:var(--li-text);margin-bottom:8px;">${escapeHtml(a.process_feedback)}</div>
+                  <div style="font-size:11px;color:var(--li-muted);">Edit debrief below to update</div>` : ''}
+                <div style="margin-top:${a.process_feedback ? '8' : '0'}px;">
+                  <div style="font-size:11px;font-weight:600;color:var(--li-muted);margin-bottom:4px;">Process rating</div>
+                  <div style="display:flex;gap:4px;margin-bottom:8px;" id="stars-${a.id}">
+                    ${[1,2,3,4,5].map(n => `<span onclick="setProcessStar('${a.id}',${n})" id="star-${a.id}-${n}" style="font-size:20px;cursor:pointer;color:${a.process_rating && a.process_rating >= n ? '#F59E0B' : '#D1D5DB'};">★</span>`).join('')}
+                    <span id="star-val-${a.id}" style="font-size:12px;color:var(--li-muted);align-self:center;margin-left:4px;">${a.process_rating ? a.process_rating.toFixed(1) + ' / 5' : 'not rated'}</span>
+                  </div>
+                  <textarea id="debrief-text-${a.id}" placeholder="How did this hiring process go? What worked, what didn't?" style="width:100%;border:1px solid var(--li-border);border-radius:6px;padding:8px 10px;font-size:12px;font-family:inherit;resize:vertical;min-height:64px;outline:none;" onfocus="this.style.borderColor='#8B5CF6'" onblur="this.style.borderColor='var(--li-border)'">${escapeHtml(a.process_feedback || '')}</textarea>
+                  <button onclick="saveProcessDebrief('${a.id}')" id="debrief-btn-${a.id}" style="margin-top:8px;padding:6px 16px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid #8B5CF6;background:#F8F4FF;color:#8B5CF6;text-align:center;">Save debrief</button>
+                </div>
               </div>` : ''}
             ${a.cover_note ? `
               <div class="app-section" style="background:#FAFAF8;">
