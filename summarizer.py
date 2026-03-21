@@ -5,9 +5,12 @@ import requests
 
 from resume_utils import fallback_profile_from_resume
 
-HF_TOKEN = os.environ.get("HF_TOKEN", "")
-MODEL_NAME = "Qwen/Qwen2.5-0.5B-Instruct"
-_HF_API_URL = f"https://api-inference.huggingface.co/models/{MODEL_NAME}"
+MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
+_HF_API_URL = "https://router.huggingface.co/featherless-ai/v1/chat/completions"
+
+
+def _get_hf_token():
+    return os.environ.get("HF_TOKEN", "")
 
 STOP_WORDS = {
     "the", "and", "for", "with", "that", "this", "from", "into", "your", "you",
@@ -27,38 +30,63 @@ ROUND_OBJECTIVES = {
 
 
 def _model_available():
-    return bool(HF_TOKEN)
+    return bool(_get_hf_token())
+
+
+def _parse_chat_prompt(prompt):
+    """Parse Qwen <|im_start|>role\ncontent<|im_end|> format into OpenAI-style messages."""
+    messages = []
+    for part in re.split(r"<\|im_start\|>", prompt):
+        part = part.strip()
+        if not part:
+            continue
+        lines = part.split("\n", 1)
+        role = lines[0].strip()
+        content = lines[1].split("<|im_end|>")[0].strip() if len(lines) > 1 else ""
+        if role in ("system", "user") and content:
+            messages.append({"role": role, "content": content})
+    return messages or [{"role": "user", "content": prompt}]
 
 
 def _call_hf(prompt, max_new_tokens=200):
-    """Call HuggingFace Inference API and return generated text."""
-    if not HF_TOKEN:
+    """Call HuggingFace Inference API (OpenAI-compatible chat completions) and return generated text."""
+    token = _get_hf_token()
+    if not token:
         return ""
     headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
+        "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
     }
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": max_new_tokens,
-            "return_full_text": False,
-            "do_sample": False,
-        },
+        "model": MODEL_NAME,
+        "messages": _parse_chat_prompt(prompt),
+        "max_tokens": max_new_tokens,
+        "stream": False,
     }
-    try:
-        resp = requests.post(_HF_API_URL, headers=headers, json=payload, timeout=60)
-        resp.raise_for_status()
-        data = resp.json()
-        if isinstance(data, list) and data:
-            return (data[0].get("generated_text") or "").strip()
-        # Model loading response (503) — HF needs time to warm up
-        if isinstance(data, dict) and data.get("error"):
-            print(f"[summarizer] HF API: {data['error']}")
-        return ""
-    except Exception as e:
-        print(f"[summarizer] HF API error: {e}")
-        return ""
+    import time
+    for attempt in range(2):
+        try:
+            resp = requests.post(_HF_API_URL, headers=headers, json=payload, timeout=90)
+            if resp.status_code == 503:
+                try:
+                    wait = resp.json().get("estimated_time", 20)
+                except Exception:
+                    wait = 20
+                print(f"[summarizer] HF model loading, waiting {wait}s…")
+                time.sleep(min(float(wait), 25))
+                continue
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, dict):
+                choices = data.get("choices") or []
+                if choices:
+                    return (choices[0].get("message", {}).get("content") or "").strip()
+                if data.get("error"):
+                    print(f"[summarizer] HF API: {data['error']}")
+            return ""
+        except Exception as e:
+            print(f"[summarizer] HF API error (attempt {attempt+1}): {e}")
+    return ""
 
 
 def _parse_json_list(value):

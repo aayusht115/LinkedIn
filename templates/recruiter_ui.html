@@ -413,7 +413,7 @@
         <div id="pipeline-title" style="display:none;"></div>
         <div id="pipeline-subtitle" style="display:none;"></div>
         <div id="pipeline-body" style="padding:8px 16px 20px;background:#fff;overflow-y:auto;max-height:calc(100vh - 270px);">
-          <div style="padding:28px 12px;text-align:center;color:var(--li-muted);font-size:13px;">Select a job opening above to load its candidate pipeline.</div>
+          <div style="padding:28px 12px;text-align:center;color:var(--li-muted);font-size:13px;"><span class="spin"></span> Loading candidates…</div>
         </div>
       </div>
 
@@ -1515,14 +1515,37 @@
   }
 
   function selectPipelineJobInline(jobId) {
-    if (!jobId) return;
+    if (!jobId) { loadAllApplicants(); return; }
     pipelineJobId = jobId;
     loadApplicants();
   }
 
   function reloadCurrentPipeline() {
     if (pipelineJobId) loadApplicants();
-    else showToast('Select a job opening first.');
+    else loadAllApplicants();
+  }
+
+  async function loadAllApplicants() {
+    pipelineJobId = null;
+    const body = document.getElementById('pipeline-body');
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--li-muted);font-size:13px;"><span class="spin"></span> Loading candidates…</div>';
+    try {
+      const res = await fetch(getBase() + '/applicants/all');
+      const applicants = await res.json();
+      const rounds = await Promise.all(applicants.map(async applicant => {
+        try {
+          const r = await fetch(getBase() + `/applications/${applicant.id}/rounds`);
+          return r.ok ? await r.json() : [];
+        } catch { return []; }
+      }));
+      allApplicants = applicants.map((applicant, index) => ({ ...applicant, rounds: rounds[index] || [] }));
+      allApplicants.forEach(applicant => { roundsByApplication[applicant.id] = applicant.rounds || []; });
+      allApplicants.sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0));
+      document.getElementById('pipeline-subtitle').textContent = allApplicants.length + ' total applicant' + (allApplicants.length !== 1 ? 's' : '') + ' across all jobs';
+      renderApplicants();
+    } catch(e) {
+      body.innerHTML = '<div style="padding:20px;color:#c0392b;font-size:13px;">Could not load applicants.</div>';
+    }
   }
 
   async function openPipeline(jobId, title) {
@@ -2347,6 +2370,7 @@
   // Load data when page opens
   loadInterviews();
   loadMyPostings();
+  loadAllApplicants();
 
   // close modals on backdrop click
   document.querySelectorAll('.modal-overlay').forEach(el=>{

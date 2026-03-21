@@ -608,15 +608,11 @@
 
   async function applyJob(jobId, btn) {
     if(btn.dataset.applied === '1') return;
-
-    const note = prompt('Add a cover note (optional):') ?? '';
-    if(note === null) return; // cancelled
-
     btn.disabled = true; btn.textContent = 'Applying…';
     try {
       const res = await fetch(getBase()+'/jobs/'+jobId+'/apply', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({user: CANDIDATE_ID, cover_note: note})
+        body: JSON.stringify({user: CANDIDATE_ID, cover_note: ''})
       });
       if(res.status === 409) { showToast('You have already applied to this job.'); btn.disabled=false; btn.textContent='Applied ✓'; btn.dataset.applied='1'; btn.style.background='#057642'; return; }
       if(!res.ok) throw new Error();
@@ -953,6 +949,11 @@
       const data = await res.json();
       const p = data.profile || {};
       renderCandidatePreview(p);
+      // Refresh jfSkills so job fit scores use the newly parsed skills
+      if (p.skills) {
+        jfSkills = p.skills.split(',').map(s => s.trim()).filter(Boolean);
+        renderSkillTags();
+      }
       if (data.name_missing) {
         status.textContent = '✓ Resume uploaded — please enter your name below';
         status.style.color = '#7a5200';

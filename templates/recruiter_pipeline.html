@@ -1138,15 +1138,12 @@
 
   async function selectPipelineJob(jobId) {
     if (!jobId) {
-      pipelineJobId = null;
-      document.getElementById('pipeline-title').textContent = 'Candidate Pipeline';
-      document.getElementById('pipeline-subtitle').textContent = 'Pick a job opening to review applicants, rounds, AI packs, and interview handoffs in one place.';
-      document.getElementById('pipeline-body').innerHTML = '<div class="loading-state" style="padding:28px 12px;">Choose a job opening to load its pipeline.</div>';
       ['pipeline-job-select', 'pipeline-screen-job-select'].forEach(id => {
         const select = document.getElementById(id);
         if (select) select.value = '';
       });
       history.replaceState({}, '', '/recruiter/pipeline');
+      await loadAllApplicants();
       return;
     }
     try {
@@ -1168,9 +1165,34 @@
       await openPipeline(selected.id, selected.title);
       return;
     }
-    document.getElementById('pipeline-subtitle').textContent = jobs.length
-      ? `Select one of ${jobs.length} job opening${jobs.length !== 1 ? 's' : ''} to review its pipeline.`
-      : 'Post a job to start building candidate pipelines.';
+    // Default: load all applicants across all jobs
+    await loadAllApplicants();
+  }
+
+  async function loadAllApplicants() {
+    pipelineJobId = null;
+    pipelineCurrentStage = 'all';
+    roundsByApplication = {};
+    document.getElementById('pipeline-title').textContent = 'All Candidates';
+    const body = document.getElementById('pipeline-body');
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--li-muted);font-size:13px;"><span class="spin"></span> Loading candidates…</div>';
+    try {
+      const res = await fetch(getBase() + '/applicants/all');
+      const applicants = await res.json();
+      const rounds = await Promise.all(applicants.map(async applicant => {
+        try {
+          const r = await fetch(getBase() + `/applications/${applicant.id}/rounds`);
+          return r.ok ? await r.json() : [];
+        } catch { return []; }
+      }));
+      allApplicants = applicants.map((applicant, index) => ({ ...applicant, rounds: rounds[index] || [] }));
+      allApplicants.forEach(applicant => { roundsByApplication[applicant.id] = applicant.rounds || []; });
+      allApplicants.sort((a, b) => (b.ai_score || 0) - (a.ai_score || 0));
+      document.getElementById('pipeline-subtitle').textContent = allApplicants.length + ' total applicant' + (allApplicants.length !== 1 ? 's' : '') + ' across all jobs';
+      renderApplicants();
+    } catch(e) {
+      body.innerHTML = '<div style="padding:20px;color:#c0392b;font-size:13px;">Could not load applicants.</div>';
+    }
   }
 
   async function openPipeline(jobId, title) {
@@ -1189,7 +1211,7 @@
 
   async function reloadCurrentPipeline() {
     if (!pipelineJobId) {
-      showToast('Select a job opening first.');
+      await loadAllApplicants();
       return;
     }
     await loadApplicants();
@@ -1452,7 +1474,8 @@
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <div style="font-weight:700;font-size:14px;">#${index + 1} ${name}</div>
-                ${a.ai_score ? `<span class="fit-badge" style="background:#E8F0FE;color:var(--li-blue);">Fit: ${a.ai_score.toFixed(0)}%</span>` : ''}
+                ${a.ai_score ? `<span class="fit-badge" style="background:#E8F0FE;color:var(--li-blue);cursor:pointer;" onclick="toggleFitPanel('${a.id}')">Fit: ${a.ai_score.toFixed(0)}% ▾</span>` : ''}
+                ${a.job_title ? `<span style="font-size:10px;color:var(--li-muted);background:#F3F2EF;border-radius:10px;padding:2px 7px;">${escapeHtml(a.job_title)}</span>` : ''}
               </div>
               <div style="font-size:12px;color:var(--li-muted);margin-top:2px;">${a.headline || 'No headline yet'}</div>
               <div style="font-size:11px;color:var(--li-muted);margin-top:2px;">${a.candidate_location || 'Location not specified'}${expSummary ? ' · ' + expSummary : ''}</div>
@@ -1466,6 +1489,13 @@
           ${renderProgressBar(a)}
           ${renderCandidateDossier(a)}
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;">${skills}</div>
+          <div id="fit-panel-${a.id}" style="display:none;background:#F8F9FA;border:1px solid var(--li-border);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px;">
+            <div id="fit-panel-content-${a.id}" style="color:var(--li-muted);">Loading fit analysis…</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;">
+            <button onclick="generateScreeningNote('${a.id}')" id="screen-btn-${a.id}" style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;border:1px solid var(--li-border);background:#fff;cursor:pointer;font-family:inherit;color:#057642;">✦ AI Screening Note</button>
+          </div>
+          ${a.screening_note ? `<div style="background:#F0F9F4;border:1px solid #C6E8D4;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;white-space:pre-wrap;">${escapeHtml(a.screening_note)}</div>` : ''}
           <div style="margin-top:8px;">
             <label style="display:block;font-size:11px;font-weight:700;color:var(--li-muted);margin-bottom:5px;">Recruiter notes</label>
             <textarea id="notes-${a.id}" style="width:100%;min-height:64px;border:1px solid var(--li-border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:12px;resize:vertical;" placeholder="Add notes for screening, feedback, or next steps...">${a.recruiter_notes || ''}</textarea>
@@ -1477,6 +1507,56 @@
         </div>
       `;
     }).join('');
+  }
+
+  const _fitPanelOpen = {};
+
+  async function toggleFitPanel(appId) {
+    const panel = document.getElementById('fit-panel-' + appId);
+    if (!panel) return;
+    if (_fitPanelOpen[appId]) {
+      panel.style.display = 'none';
+      _fitPanelOpen[appId] = false;
+      return;
+    }
+    panel.style.display = '';
+    _fitPanelOpen[appId] = true;
+    const content = document.getElementById('fit-panel-content-' + appId);
+    content.innerHTML = '<span style="color:var(--li-muted);">Loading…</span>';
+    try {
+      const res = await fetch(getBase() + '/applications/' + appId + '/fit');
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      const signalColor = s => s === 'positive' ? '#057642' : s === 'gap' ? '#c0392b' : '#856404';
+      const signalIcon = s => s === 'positive' ? '✓' : s === 'gap' ? '✗' : '?';
+      content.innerHTML = `
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px;">Fit Score: ${d.score}% — <span style="color:${d.score>=72?'#057642':d.score>=55?'#856404':'#c0392b'}">${d.recommendation}</span></div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          ${(d.signals||[]).map(s=>`<span style="color:${signalColor(s.status)};background:#fff;border:1px solid ${signalColor(s.status)}33;border-radius:20px;padding:2px 8px;font-size:11px;">${signalIcon(s.status)} ${escapeHtml(s.label)}: ${escapeHtml(s.detail)}</span>`).join('')}
+        </div>
+        ${d.matched?.length ? `<div style="margin-bottom:4px;"><span style="font-weight:700;color:#057642;">Matched:</span> ${d.matched.map(m=>`<span style="background:#E8F5EE;border-radius:10px;padding:1px 7px;font-size:11px;margin:1px;">${escapeHtml(m)}</span>`).join('')}</div>` : ''}
+        ${d.gaps?.length ? `<div><span style="font-weight:700;color:#c0392b;">Gaps:</span> ${d.gaps.map(g=>`<span style="background:#FFF4F2;border-radius:10px;padding:1px 7px;font-size:11px;margin:1px;">${escapeHtml(g)}</span>`).join('')}</div>` : ''}
+      `;
+    } catch(e) {
+      content.innerHTML = '<span style="color:#c0392b;">Could not load fit analysis.</span>';
+    }
+  }
+
+  async function generateScreeningNote(appId) {
+    const btn = document.getElementById('screen-btn-' + appId);
+    if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+    try {
+      const res = await fetch(getBase() + '/applications/' + appId + '/screening', { method: 'POST' });
+      if (!res.ok) throw new Error();
+      const d = await res.json();
+      const app = allApplicants.find(a => a.id === appId);
+      if (app) app.screening_note = d.note;
+      renderApplicants();
+      showToast('Screening note generated.');
+    } catch(e) {
+      showToast('Could not generate screening note.');
+      if (btn) { btn.disabled = false; btn.textContent = '✦ AI Screening Note'; }
+    }
   }
 
   async function updateStage(appId, newStatus) {
@@ -1809,6 +1889,11 @@
   // Load data when page opens
   loadInterviews();
   loadMyPostings();
+  // Load all candidates immediately — don't wait for loadMyPostings to finish
+  if (!INITIAL_PIPELINE_JOB_ID) {
+    hasInitializedPipeline = true; // prevent ensureInitialPipelineSelection from re-loading
+    loadAllApplicants();
+  }
 
   // close modals on backdrop click
   document.querySelectorAll('.modal-overlay').forEach(el=>{

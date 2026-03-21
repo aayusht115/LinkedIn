@@ -154,8 +154,12 @@ def _extract_date_span(text):
 
 
 def _is_section_header(line):
-    words = set(re.findall(r'[a-z]+', line.lower()))
-    return len(line.split()) <= 6 and bool(words.intersection(HEADER_WORDS))
+    tokens = [w for w in re.findall(r'[a-z]+', line.lower()) if len(w) > 2]
+    if not tokens or len(line.split()) > 6:
+        return False
+    header_hits = sum(1 for t in tokens if t in HEADER_WORDS)
+    # Majority of meaningful words must be section-header words
+    return header_hits / len(tokens) >= 0.5
 
 
 def _get_section_lines(all_lines, target_words):

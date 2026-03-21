@@ -1020,6 +1020,27 @@ def save_process_feedback(application_id, process_feedback, process_rating):
     conn.close()
     return dict(app_row) if app_row else None
 
+def get_all_applicants_enriched():
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT a.id, a.job_id, a.user_identifier, a.status, a.cover_note, a.ai_score,
+               a.ai_analysis, a.recruiter_notes, a.screening_note, a.resume_filename,
+               a.rejection_reason, a.offer_due_date, a.candidate_decision,
+               a.process_feedback, a.process_rating,
+               a.applied_at, a.updated_at,
+               cp.name as candidate_name, cp.headline, cp.one_liner, cp.location as candidate_location,
+               cp.skills as candidate_skills, cp.experience as candidate_experience,
+               cp.bio as candidate_bio,
+               j.title as job_title, j.company as job_company
+        FROM applications a
+        LEFT JOIN candidate_profiles cp ON a.user_identifier = cp.user_identifier
+        LEFT JOIN jobs j ON a.job_id = j.id
+        ORDER BY a.applied_at DESC
+    """).fetchall()
+    conn.close()
+    return [dict(row) for row in rows]
+
+
 def update_applications_resume_for_user(user_identifier, profile_snapshot, resume_filename, resume_text):
     """Sync updated resume + profile snapshot across all existing applications for a user."""
     conn = get_connection()

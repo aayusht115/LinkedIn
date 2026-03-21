@@ -1,11 +1,14 @@
 import os
 import json
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
 from flask import Flask, request, jsonify, render_template, send_file
 from flask_cors import CORS
 from interview_scheduler import schedule_interview
 from recruiter_score import get_recruiter_score, get_all_recruiters
-from summarizer import summarize_post, calculate_fit_breakdown
+from summarizer import summarize_post, calculate_fit_breakdown, infer_profile_from_resume
 from resume_utils import (
     save_resume_file,
     extract_resume_text,
@@ -23,6 +26,7 @@ from database import (
     update_application_status, get_application_by_id, update_application_ai, update_application_notes,
     update_application_offer, update_application_candidate_decision, save_process_feedback,
     update_applications_resume_for_user,
+    get_all_applicants_enriched,
     create_interview_round, get_interview_round, get_interview_rounds_by_application, update_interview_round, delete_interview_round,
     delete_interview_round,
 )
@@ -239,6 +243,20 @@ def upload_resume():
 
     existing = get_candidate_profile(user) or {"user_identifier": user}
     inferred = fallback_profile_from_resume(resume_text, existing)
+    # If HF token available, use AI inference for better experience/education extraction
+    if os.environ.get("HF_TOKEN"):
+        try:
+            ai = infer_profile_from_resume(resume_text, existing)
+            if ai.get("experience"):
+                inferred["experience"] = ai["experience"]
+            if ai.get("education"):
+                inferred["education"] = ai["education"]
+            if not inferred.get("headline") and ai.get("headline"):
+                inferred["headline"] = ai["headline"]
+            if not inferred.get("skills") and ai.get("skills"):
+                inferred["skills"] = ai["skills"]
+        except Exception:
+            pass
     # Name is never auto-filled from resume — only preserve existing or let user enter it
     kept_name = existing.get("name") or ""
     generated_bio = existing.get("bio") or quick_bio_from_profile({
@@ -355,6 +373,36 @@ def list_applications():
 @app.route("/jobs/<job_id>/applicants", methods=["GET"])
 def job_applicants(job_id):
     return jsonify(get_applications_by_job(job_id))
+
+@app.route("/applicants/all", methods=["GET"])
+def all_applicants():
+    return jsonify(get_all_applicants_enriched())
+
+@app.route("/applications/<application_id>/fit", methods=["GET"])
+def application_fit(application_id):
+    application = get_application_by_id(application_id)
+    if not application:
+        return jsonify({"error": "Not found"}), 404
+    job = get_job_by_id(application["job_id"])
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    profile = _profile_for_application(application)
+    breakdown = calculate_fit_breakdown(profile, job)
+    return jsonify(breakdown)
+
+@app.route("/applications/<application_id>/screening", methods=["POST"])
+def application_screening(application_id):
+    from summarizer import generate_screening_note
+    application = get_application_by_id(application_id)
+    if not application:
+        return jsonify({"error": "Not found"}), 404
+    job = get_job_by_id(application["job_id"])
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    profile = _profile_for_application(application)
+    result = generate_screening_note(profile, job, application)
+    update_application_ai(application_id, screening_note=result.get("note"))
+    return jsonify(result)
 
 @app.route("/applications/<application_id>/status", methods=["PATCH"])
 def update_app_status(application_id):
